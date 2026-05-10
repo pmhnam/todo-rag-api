@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateEmbeddingTables1715300000001 implements MigrationInterface {
-  name = 'CreateEmbeddingTables1715300000001';
+export class CreateEmbeddingTables1722352657867 implements MigrationInterface {
+  name = 'CreateEmbeddingTables1722352657867';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Create embedding_source table

@@ -8,6 +8,7 @@ import { firstValueFrom } from 'rxjs';
 export class EmbeddingService {
   private readonly logger = new Logger(EmbeddingService.name);
   private readonly baseUrl: string;
+  private readonly embedModel: string;
   private readonly maxBatchSize: number;
   private readonly timeout: number;
 
@@ -15,19 +16,22 @@ export class EmbeddingService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService<AllConfigType>,
   ) {
-    const host = this.configService.get('tei.host', { infer: true });
-    const port = this.configService.get('tei.port', { infer: true });
-    this.baseUrl = `http://${host}:${port}`;
-    this.maxBatchSize = this.configService.get('tei.maxBatchSize', {
+    this.baseUrl = this.configService.get('ollama.baseUrl', {
       infer: true,
-    });
-    this.timeout = this.configService.get('tei.requestTimeout', {
+    }) as string;
+    this.embedModel = this.configService.get('ollama.embedModel', {
       infer: true,
-    });
+    }) as string;
+    this.maxBatchSize = this.configService.get('ollama.maxBatchSize', {
+      infer: true,
+    }) as number;
+    this.timeout = this.configService.get('ollama.requestTimeout', {
+      infer: true,
+    }) as number;
   }
 
   /**
-   * Generate embeddings for multiple texts via TEI /embed endpoint.
+   * Generate embeddings for multiple texts via Ollama /api/embed endpoint.
    * Automatically batches if texts exceed maxBatchSize.
    */
   async embed(texts: string[]): Promise<number[][]> {
@@ -54,40 +58,42 @@ export class EmbeddingService {
   }
 
   /**
-   * Internal: send a single batch to TEI.
+   * Internal: send a single batch to Ollama.
    */
   private async embedBatch(texts: string[]): Promise<number[][]> {
-    const url = `${this.baseUrl}/embed`;
+    const url = `${this.baseUrl}/api/embed`;
 
-    this.logger.debug(`TEI embed request: ${texts.length} texts, url=${url}`);
+    this.logger.debug(
+      `Ollama embed request: ${texts.length} texts, url=${url}`,
+    );
 
     try {
       const { data } = await firstValueFrom(
-        this.httpService.post<number[][]>(
+        this.httpService.post<{ model: string; embeddings: number[][] }>(
           url,
-          { inputs: texts, truncate: true },
+          { model: this.embedModel, input: texts },
           { timeout: this.timeout },
         ),
       );
 
       this.logger.debug(
-        `TEI embed response: ${data.length} embeddings, dim=${data[0]?.length}`,
+        `Ollama embed response: ${data.embeddings.length} embeddings, dim=${data.embeddings[0]?.length}`,
       );
 
-      return data;
+      return data.embeddings;
     } catch (error) {
-      this.logger.error(`TEI embed failed: ${error.message}`);
+      this.logger.error(`Ollama embed failed: ${error.message}`);
       throw error;
     }
   }
 
   /**
-   * Check if TEI server is healthy.
+   * Check if Ollama server is healthy.
    */
   async isHealthy(): Promise<boolean> {
     try {
       await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/health`, { timeout: 5000 }),
+        this.httpService.get(`${this.baseUrl}/`, { timeout: 5000 }),
       );
       return true;
     } catch {

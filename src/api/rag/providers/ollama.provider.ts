@@ -2,6 +2,9 @@ import { AllConfigType } from '@/config/config.type';
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as http from 'http';
+import * as https from 'https';
+import * as readline from 'readline';
 import { firstValueFrom } from 'rxjs';
 import { ILlmProvider } from '../interfaces/llm-provider.interface';
 import { ChatMessage, LlmOptions, LlmResponse } from '../interfaces/llm.types';
@@ -11,17 +14,19 @@ export class OllamaProvider implements ILlmProvider {
   private readonly logger = new Logger(OllamaProvider.name);
   private readonly baseUrl: string;
   private readonly defaultModel: string;
+  private readonly httpAgent = new http.Agent({ keepAlive: true });
+  private readonly httpsAgent = new https.Agent({ keepAlive: true });
 
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService<AllConfigType>,
   ) {
-    const host = this.configService.get('llm.ollamaHost', { infer: true });
-    const port = this.configService.get('llm.ollamaPort', { infer: true });
-    this.baseUrl = `http://${host}:${port}`;
+    this.baseUrl = this.configService.get('llm.ollamaBaseUrl', {
+      infer: true,
+    }) as string;
     this.defaultModel = this.configService.get('llm.ollamaModel', {
       infer: true,
-    });
+    }) as string;
   }
 
   async chat(
@@ -36,33 +41,66 @@ export class OllamaProvider implements ILlmProvider {
     );
 
     try {
-      const { data } = await firstValueFrom(
-        this.httpService.post(url, {
-          model,
-          messages,
-          stream: false,
-          options: {
-            num_predict:
-              options?.maxTokens ||
-              this.configService.get('llm.maxTokens', { infer: true }),
-            temperature:
-              options?.temperature ||
-              this.configService.get('llm.temperature', { infer: true }),
-            top_p: options?.topP,
-            stop: options?.stop,
+      const { data: stream } = await firstValueFrom(
+        this.httpService.post(
+          url,
+          {
+            model,
+            messages,
+            stream: true,
+            options: {
+              num_predict:
+                options?.maxTokens ||
+                this.configService.get('llm.maxTokens', { infer: true }),
+              temperature:
+                options?.temperature ||
+                this.configService.get('llm.temperature', { infer: true }),
+              top_p: options?.topP,
+              stop: options?.stop,
+            },
           },
-        }),
+          {
+            responseType: 'stream',
+            timeout: 300000, // 5 minutes timeout
+            httpAgent: this.httpAgent,
+            httpsAgent: this.httpsAgent,
+          },
+        ),
       );
 
+      let fullContent = '';
+      let lastData: any = {};
+
+      const rl = readline.createInterface({
+        input: stream,
+        crlfDelay: Infinity,
+      });
+
+      for await (const line of rl) {
+        if (!line.trim()) continue;
+        try {
+          const parsed = JSON.parse(line);
+          if (parsed.message?.content) {
+            fullContent += parsed.message.content;
+          }
+          if (parsed.done) {
+            lastData = parsed;
+          }
+        } catch (e) {
+          this.logger.warn(`Failed to parse stream line: ${line}`);
+        }
+      }
+
       return {
-        content: data.message?.content || '',
-        model: data.model || model,
+        content: fullContent,
+        model: lastData.model || model,
         tokenUsage: {
-          promptTokens: data.prompt_eval_count,
-          completionTokens: data.eval_count,
-          totalTokens: (data.prompt_eval_count || 0) + (data.eval_count || 0),
+          promptTokens: lastData.prompt_eval_count || 0,
+          completionTokens: lastData.eval_count || 0,
+          totalTokens:
+            (lastData.prompt_eval_count || 0) + (lastData.eval_count || 0),
         },
-        finishReason: data.done_reason || 'stop',
+        finishReason: lastData.done_reason || 'stop',
       };
     } catch (error) {
       this.logger.error(`Ollama chat failed: ${error.message}`);
@@ -79,33 +117,66 @@ export class OllamaProvider implements ILlmProvider {
     );
 
     try {
-      const { data } = await firstValueFrom(
-        this.httpService.post(url, {
-          model,
-          prompt,
-          stream: false,
-          options: {
-            num_predict:
-              options?.maxTokens ||
-              this.configService.get('llm.maxTokens', { infer: true }),
-            temperature:
-              options?.temperature ||
-              this.configService.get('llm.temperature', { infer: true }),
-            top_p: options?.topP,
-            stop: options?.stop,
+      const { data: stream } = await firstValueFrom(
+        this.httpService.post(
+          url,
+          {
+            model,
+            prompt,
+            stream: true,
+            options: {
+              num_predict:
+                options?.maxTokens ||
+                this.configService.get('llm.maxTokens', { infer: true }),
+              temperature:
+                options?.temperature ||
+                this.configService.get('llm.temperature', { infer: true }),
+              top_p: options?.topP,
+              stop: options?.stop,
+            },
           },
-        }),
+          {
+            responseType: 'stream',
+            timeout: 300000, // 5 minutes timeout
+            httpAgent: this.httpAgent,
+            httpsAgent: this.httpsAgent,
+          },
+        ),
       );
 
+      let fullContent = '';
+      let lastData: any = {};
+
+      const rl = readline.createInterface({
+        input: stream,
+        crlfDelay: Infinity,
+      });
+
+      for await (const line of rl) {
+        if (!line.trim()) continue;
+        try {
+          const parsed = JSON.parse(line);
+          if (parsed.response) {
+            fullContent += parsed.response;
+          }
+          if (parsed.done) {
+            lastData = parsed;
+          }
+        } catch (e) {
+          this.logger.warn(`Failed to parse stream line: ${line}`);
+        }
+      }
+
       return {
-        content: data.response || '',
-        model: data.model || model,
+        content: fullContent,
+        model: lastData.model || model,
         tokenUsage: {
-          promptTokens: data.prompt_eval_count,
-          completionTokens: data.eval_count,
-          totalTokens: (data.prompt_eval_count || 0) + (data.eval_count || 0),
+          promptTokens: lastData.prompt_eval_count || 0,
+          completionTokens: lastData.eval_count || 0,
+          totalTokens:
+            (lastData.prompt_eval_count || 0) + (lastData.eval_count || 0),
         },
-        finishReason: data.done_reason || 'stop',
+        finishReason: lastData.done_reason || 'stop',
       };
     } catch (error) {
       this.logger.error(`Ollama generate failed: ${error.message}`);

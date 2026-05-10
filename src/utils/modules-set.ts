@@ -1,7 +1,7 @@
 import { ApiModule } from '@/api/api.module';
 import authConfig from '@/api/auth/config/auth.config';
 import llmConfig from '@/api/rag/config/llm.config';
-import teiConfig from '@/api/rag/config/tei.config';
+import ollamaConfig from '@/api/rag/config/ollama.config';
 import { BackgroundModule } from '@/background/background.module';
 import appConfig from '@/config/app.config';
 import { AllConfigType } from '@/config/config.type';
@@ -38,7 +38,7 @@ function generateModulesSet() {
         redisConfig,
         authConfig,
         mailConfig,
-        teiConfig,
+        ollamaConfig,
         llmConfig,
       ],
       envFilePath: ['.env'],

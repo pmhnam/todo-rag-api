@@ -1,9 +1,12 @@
 export type LlmConfig = {
   provider: string;
   // Ollama
-  ollamaHost: string;
-  ollamaPort: number;
+  ollamaBaseUrl: string;
   ollamaModel: string;
+  // OpenRouter
+  openrouterBaseUrl: string;
+  openrouterApiKey?: string;
+  openrouterModel: string;
   // OpenAI (future)
   openaiApiKey?: string;
   openaiModel?: string;

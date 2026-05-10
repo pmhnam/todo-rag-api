@@ -13,6 +13,7 @@ import { RagConversationEntity } from './entities/rag-conversation.entity';
 import { RagMessageEntity } from './entities/rag-message.entity';
 import { LlmProviderFactory } from './providers/llm-provider.factory';
 import { OllamaProvider } from './providers/ollama.provider';
+import { OpenRouterProvider } from './providers/openrouter.provider';
 import { ChunkingService } from './services/chunking.service';
 import { EmbeddingService } from './services/embedding.service';
 import { IndexingHelperService } from './services/indexing-helper.service';
@@ -48,6 +49,7 @@ import { SearchService } from './services/search.service';
     RagService,
     // LLM Providers
     OllamaProvider,
+    OpenRouterProvider,
     LlmProviderFactory,
   ],
   exports: [IndexingService, EmbeddingService, ChunkingService],

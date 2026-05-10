@@ -1,9 +1,9 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateRagConversationTables1715300000002
+export class CreateRagConversationTables1722352657868
   implements MigrationInterface
 {
-  name = 'CreateRagConversationTables1715300000002';
+  name = 'CreateRagConversationTables1722352657868';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Create rag_conversation table

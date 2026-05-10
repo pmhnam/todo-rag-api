@@ -4,11 +4,13 @@ import { LlmConfig } from './llm-config.type';
 export default registerAs<LlmConfig>('llm', () => ({
   provider: process.env.LLM_PROVIDER || 'ollama',
   // Ollama specific
-  ollamaHost: process.env.OLLAMA_HOST || 'localhost',
-  ollamaPort: process.env.OLLAMA_PORT
-    ? parseInt(process.env.OLLAMA_PORT, 10)
-    : 11434,
+  ollamaBaseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
   ollamaModel: process.env.OLLAMA_MODEL || 'llama3',
+  // OpenRouter specific
+  openrouterBaseUrl:
+    process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
+  openrouterApiKey: process.env.OPENROUTER_API_KEY,
+  openrouterModel: process.env.OPENROUTER_MODEL || 'google/gemma-2-9b-it:free',
   // OpenAI specific (future)
   openaiApiKey: process.env.OPENAI_API_KEY,
   openaiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
