@@ -1,12 +1,14 @@
+import { IndexingService } from '@/api/rag/services/indexing.service';
 import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { Uuid } from '@/common/types/common.type';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
 import { paginate } from '@/utils/offset-pagination';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { Repository } from 'typeorm';
+import { SourceType } from '../../rag/enums/source-type.enum';
 import { CreateTodoReqDto } from '../dto/create-todo.req.dto';
 import { ListTodoReqDto } from '../dto/list-todo.req.dto';
 import { TodoResDto } from '../dto/todo.res.dto';
@@ -16,11 +18,14 @@ import { TodoEntity } from '../entities/todo.entity';
 
 @Injectable()
 export class TodoService {
+  private readonly logger = new Logger(TodoService.name);
+
   constructor(
     @InjectRepository(TodoEntity)
     private readonly todoRepository: Repository<TodoEntity>,
     @InjectRepository(TodoStatusEntity)
     private readonly todoStatusRepository: Repository<TodoStatusEntity>,
+    private readonly indexingService: IndexingService,
   ) {}
 
   async findMany(
@@ -96,6 +101,12 @@ export class TodoService {
     });
 
     const saved = await this.todoRepository.save(todo);
+
+    // Auto-index for RAG (fire-and-forget)
+    this.triggerReindex(userId, saved).catch((err) =>
+      this.logger.warn(`Failed to index todo ${saved.id}: ${err.message}`),
+    );
+
     return plainToInstance(TodoResDto, { ...saved, status });
   }
 
@@ -130,6 +141,12 @@ export class TodoService {
     todo.updatedBy = userId;
 
     const saved = await this.todoRepository.save(todo);
+
+    // Auto-reindex for RAG (fire-and-forget)
+    this.triggerReindex(userId, saved).catch((err) =>
+      this.logger.warn(`Failed to reindex todo ${saved.id}: ${err.message}`),
+    );
+
     return plainToInstance(TodoResDto, saved);
   }
 
@@ -143,5 +160,38 @@ export class TodoService {
     }
 
     await this.todoRepository.softDelete(id);
+
+    // Remove RAG index (fire-and-forget)
+    this.indexingService
+      .removeIndex(SourceType.TODO, id)
+      .catch((err) =>
+        this.logger.warn(
+          `Failed to remove index for todo ${id}: ${err.message}`,
+        ),
+      );
+  }
+
+  /**
+   * Trigger RAG re-indexing for a todo.
+   * Combines title + description as embeddable content.
+   */
+  private async triggerReindex(userId: Uuid, todo: TodoEntity): Promise<void> {
+    const contentParts = [todo.title];
+    if (todo.description) {
+      contentParts.push(todo.description);
+    }
+    const content = contentParts.join('\n');
+
+    await this.indexingService.reindexIfChanged(
+      userId,
+      SourceType.TODO,
+      todo.id,
+      content,
+      {
+        title: todo.title,
+        priority: todo.priority,
+        status: todo.status?.name,
+      },
+    );
   }
 }

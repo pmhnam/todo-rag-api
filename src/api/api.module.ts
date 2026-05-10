@@ -4,6 +4,7 @@ import { HealthModule } from './health/health.module';
 import { HomeModule } from './home/home.module';
 import { JiraIntegrationModule } from './jira-integration/jira-integration.module';
 import { PostModule } from './post/post.module';
+import { RagModule } from './rag/rag.module';
 import { TodoModule } from './todo/todo.module';
 import { UserModule } from './user/user.module';
 
@@ -16,6 +17,7 @@ import { UserModule } from './user/user.module';
     PostModule,
     TodoModule,
     JiraIntegrationModule,
+    RagModule,
   ],
 })
 export class ApiModule {}

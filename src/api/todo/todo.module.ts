@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { RagModule } from '../rag/rag.module';
 import { TodoStatusController } from './controllers/todo-status.controller';
 import { TodoController } from './controllers/todo.controller';
 import { TodoStatusEntity } from './entities/todo-status.entity';
@@ -8,7 +9,10 @@ import { TodoStatusService } from './services/todo-status.service';
 import { TodoService } from './services/todo.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TodoEntity, TodoStatusEntity])],
+  imports: [
+    TypeOrmModule.forFeature([TodoEntity, TodoStatusEntity]),
+    RagModule,
+  ],
   controllers: [TodoController, TodoStatusController],
   providers: [TodoService, TodoStatusService],
   exports: [TodoStatusService],

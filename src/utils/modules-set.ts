@@ -1,5 +1,7 @@
 import { ApiModule } from '@/api/api.module';
 import authConfig from '@/api/auth/config/auth.config';
+import llmConfig from '@/api/rag/config/llm.config';
+import teiConfig from '@/api/rag/config/tei.config';
 import { BackgroundModule } from '@/background/background.module';
 import appConfig from '@/config/app.config';
 import { AllConfigType } from '@/config/config.type';
@@ -30,7 +32,15 @@ function generateModulesSet() {
   const imports: ModuleMetadata['imports'] = [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, redisConfig, authConfig, mailConfig],
+      load: [
+        appConfig,
+        databaseConfig,
+        redisConfig,
+        authConfig,
+        mailConfig,
+        teiConfig,
+        llmConfig,
+      ],
       envFilePath: ['.env'],
     }),
   ];
