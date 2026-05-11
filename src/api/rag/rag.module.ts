@@ -11,6 +11,9 @@ import { EmbeddingChunkEntity } from './entities/embedding-chunk.entity';
 import { EmbeddingSourceEntity } from './entities/embedding-source.entity';
 import { RagConversationEntity } from './entities/rag-conversation.entity';
 import { RagMessageEntity } from './entities/rag-message.entity';
+import { GeminiEmbeddingProvider } from './providers/embedding-gemini.provider';
+import { OllamaEmbeddingProvider } from './providers/embedding-ollama.provider';
+import { EmbeddingProviderFactory } from './providers/embedding-provider.factory';
 import { LlmProviderFactory } from './providers/llm-provider.factory';
 import { OllamaProvider } from './providers/ollama.provider';
 import { OpenRouterProvider } from './providers/openrouter.provider';
@@ -47,6 +50,10 @@ import { SearchService } from './services/search.service';
     SearchService,
     LlmService,
     RagService,
+    // Embedding Providers
+    OllamaEmbeddingProvider,
+    GeminiEmbeddingProvider,
+    EmbeddingProviderFactory,
     // LLM Providers
     OllamaProvider,
     OpenRouterProvider,

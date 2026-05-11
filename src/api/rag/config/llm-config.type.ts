@@ -1,5 +1,6 @@
 export type LlmConfig = {
   provider: string;
+  embeddingProvider: string;
   // Ollama
   ollamaBaseUrl: string;
   ollamaModel: string;
@@ -7,6 +8,9 @@ export type LlmConfig = {
   openrouterBaseUrl: string;
   openrouterApiKey?: string;
   openrouterModel: string;
+  // Gemini
+  geminiApiKey?: string;
+  geminiEmbedModel: string;
   // OpenAI (future)
   openaiApiKey?: string;
   openaiModel?: string;
