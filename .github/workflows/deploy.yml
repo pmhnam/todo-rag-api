@@ -1,0 +1,75 @@
+name: Build and Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          # Nếu server của bạn là ARM64 (như Oracle Cloud ARM), hãy thêm platforms: linux/arm64. Nếu là VPS x86 bình thường thì xoá dòng dưới đi.
+          platforms: linux/arm64 
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            # Đăng nhập vào GitHub Container Registry trên server
+            echo "${{ secrets.CR_PAT }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            
+            # Kéo image mới nhất vừa build
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            
+            # Đổi tag image để khớp với tên được trỏ định trong docker-compose.yml
+            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest todo-rag-api:latest
+            
+            # Di chuyển tới thư mục chứa project
+            cd /path/to/your/nestjs-boilerplate
+            
+            # Cập nhật code mới (tuỳ chọn nếu thư mục chứa các file config/compose có thay đổi)
+            git pull origin main
+            
+            # Chạy lại container, tham số --no-build để ép docker compose KHÔNG tự build mà dùng image đã tải
+            docker compose -f docker-compose.yml up -d --no-build
+            
+            # Dọn dẹp image thừa/cũ
+            docker image prune -f

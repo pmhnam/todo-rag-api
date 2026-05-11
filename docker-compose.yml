@@ -1,63 +1,58 @@
 services:
-  nestjs-boilerplate-api:
-    image: nestjs-boilerplate-api
-    container_name: nestjs-boilerplate-api
+  todo-rag-api:
+    image: todo-rag-api
+    # Only for Production server
+    platform: linux/arm64
+    container_name: todo-rag-api
     restart: always
     build:
       context: .
       dockerfile: Dockerfile
     env_file:
-      - .env.docker
-    ports:
-      - "3000:3000"
+      - .env
     networks:
-      - nestjs-boilerplate-network
+      - todo-rag-network
+      - shared_backend_net
 
   db:
-    image: postgres:16
-    container_name: nestjs-boilerplate-postgres
+    image: pgvector/pgvector:pg18
+    platform: linux/arm64
+    container_name: todo-rag-postgres
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Mount a script to automatically enable the extension on startup
+      - ./init-db:/docker-entrypoint-initdb.d
     environment:
-      POSTGRES_DB: nestjs_boilerplate
+      POSTGRES_DB: todo_rag_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      TZ: "UTC"
-    ports:
-      - "25432:5432"
+      TZ: 'UTC'
     networks:
-      - nestjs-boilerplate-network
+      - todo-rag-network
+      - shared_backend_net
 
   redis:
     image: redis/redis-stack:latest
+    platform: linux/arm64
     restart: always
-    ports:
-      - "6379:6379"
-      - "8001:8001"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
     environment:
-      REDIS_ARGS: "--requirepass redispass"
+      REDIS_ARGS: '--requirepass redispass'
     networks:
-      - nestjs-boilerplate-network
-
-  maildev:
-    build:
-      context: .
-      dockerfile: maildev.Dockerfile
-    ports:
-      - ${MAIL_CLIENT_PORT}:1080
-      - ${MAIL_PORT}:1025
-    networks:
-      - nestjs-boilerplate-network
+      - todo-rag-network
+      - shared_backend_net
 
 volumes:
   postgres_data:
   redis_data:
 
 networks:
-  nestjs-boilerplate-network:
+  # For cloudflare tunnel to access the API container
+  shared_backend_net:
+    external: true
+  todo-rag-network:
     driver: bridge
