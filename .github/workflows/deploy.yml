@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - develop
 
 env:
   REGISTRY: ghcr.io
@@ -64,7 +63,7 @@ jobs:
             docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest todo-rag-api:latest
 
             # Di chuyển tới thư mục chứa project
-            cd /path/to/your/nestjs-boilerplate
+            cd home/ubuntu/todo-rag-app/todo-rag-api
 
             # Cập nhật code mới (tuỳ chọn nếu thư mục chứa các file config/compose có thay đổi)
             git pull origin main
