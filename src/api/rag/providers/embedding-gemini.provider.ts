@@ -45,6 +45,7 @@ export class GeminiEmbeddingProvider implements IEmbeddingProvider {
         content: {
           parts: [{ text }],
         },
+        outputDimensionality: 1024,
       }));
 
       const { data } = await firstValueFrom(
