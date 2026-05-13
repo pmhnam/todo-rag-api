@@ -17,6 +17,7 @@ import {
 } from '@nestjs/common';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { CreateTodoReqDto } from '../dto/create-todo.req.dto';
+import { LinkJiraIssueReqDto } from '../dto/link-jira-issue.req.dto';
 import { ListTodoReqDto } from '../dto/list-todo.req.dto';
 import { TodoResDto } from '../dto/todo.res.dto';
 import { UpdateTodoReqDto } from '../dto/update-todo.req.dto';
@@ -83,6 +84,20 @@ export class TodoController {
     @Body() reqDto: UpdateTodoReqDto,
   ): Promise<TodoResDto> {
     return this.todoService.update(id, userId, reqDto);
+  }
+
+  @Patch(':id/jira-link')
+  @ApiAuth({
+    type: TodoResDto,
+    summary: 'Link a todo to a Jira issue key',
+  })
+  @ApiParam({ name: 'id', type: 'String' })
+  async linkJiraIssue(
+    @CurrentUser('id') userId: Uuid,
+    @Param('id', ParseUUIDPipe) id: Uuid,
+    @Body() reqDto: LinkJiraIssueReqDto,
+  ): Promise<TodoResDto> {
+    return this.todoService.linkJiraIssue(id, userId, reqDto);
   }
 
   @Delete(':id')

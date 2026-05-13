@@ -102,7 +102,7 @@ export class OllamaProvider implements ILlmProvider {
         },
         finishReason: lastData.done_reason || 'stop',
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Ollama chat failed: ${error.message}`);
       throw error;
     }
@@ -178,7 +178,7 @@ export class OllamaProvider implements ILlmProvider {
         },
         finishReason: lastData.done_reason || 'stop',
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Ollama generate failed: ${error.message}`);
       throw error;
     }

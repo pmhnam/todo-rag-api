@@ -4,7 +4,6 @@ import { Uuid } from '@/common/types/common.type';
 import { paginate } from '@/utils/offset-pagination';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { plainToInstance } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { CreateProjectReqDto } from '../dto/create-project.req.dto';
 import { ProjectResDto } from '../dto/project.res.dto';
@@ -37,7 +36,7 @@ export class ProjectService {
     );
 
     return new OffsetPaginatedDto(
-      plainToInstance(ProjectResDto, entities),
+      entities.map((entity) => new ProjectResDto(entity)),
       metaDto,
     );
   }
@@ -58,6 +57,8 @@ export class ProjectService {
   ): Promise<ProjectResDto> {
     const project = new ProjectEntity({
       ...reqDto,
+      createdBy: userId,
+      updatedBy: userId,
       userId,
     });
     const savedProject = await this.projectRepository.save(project);

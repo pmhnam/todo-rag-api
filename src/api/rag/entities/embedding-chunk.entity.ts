@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 import { UserEntity } from '@/api/user/entities/user.entity';
 import { Uuid } from '@/common/types/common.type';
 import {
@@ -58,8 +59,8 @@ export class EmbeddingChunkEntity {
   @Column({ name: 'token_count', type: 'int', nullable: true })
   tokenCount?: number;
 
-  // Vector column — actual DB type is vector(1024) created via migration.
-  // TypeORM treats it as text with a transformer for serialization.
+  // TypeORM 0.3.20 does not validate pgvector as a native column type.
+  // The actual database column is vector(1024), managed by raw SQL migrations.
   @Column({
     type: 'text',
     nullable: true,
@@ -68,7 +69,6 @@ export class EmbeddingChunkEntity {
       from: (value: string | null) =>
         value
           ? value
-              // eslint-disable-next-line no-useless-escape
               .replace(/[\[\]]/g, '')
               .split(',')
               .map(Number)

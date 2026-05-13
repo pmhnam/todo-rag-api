@@ -1,3 +1,4 @@
+import { ProjectEntity } from '@/api/project/entities/project.entity';
 import { UserEntity } from '@/api/user/entities/user.entity';
 import { Uuid } from '@/common/types/common.type';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
@@ -10,11 +11,12 @@ import {
   Entity,
   Index,
   JoinColumn,
+  ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   Relation,
 } from 'typeorm';
+import { JiraAuthType } from '../enums/jira-auth-type.enum';
 import { JiraStatusMappingEntity } from './jira-status-mapping.entity';
 
 const ALGORITHM = 'aes-256-cbc';
@@ -63,8 +65,16 @@ export class JiraIntegrationEntity extends AbstractEntity {
   @Column({ name: 'jira_domain', length: 255 })
   jiraDomain!: string;
 
-  @Column({ name: 'jira_email', length: 255 })
-  jiraEmail!: string;
+  @Column({ name: 'jira_email', length: 255, nullable: true })
+  jiraEmail?: string;
+
+  @Column({
+    name: 'auth_type',
+    type: 'enum',
+    enum: JiraAuthType,
+    default: JiraAuthType.BASIC,
+  })
+  authType!: JiraAuthType;
 
   @Column({ name: 'jira_api_token' })
   jiraApiToken!: string;
@@ -72,7 +82,6 @@ export class JiraIntegrationEntity extends AbstractEntity {
   @Column({ name: 'jira_project_key', length: 50, nullable: true })
   jiraProjectKey?: string;
 
-  @Index('UQ_jira_integration_user_id', { unique: true })
   @Column({ name: 'user_id' })
   userId!: Uuid;
 
@@ -81,8 +90,20 @@ export class JiraIntegrationEntity extends AbstractEntity {
     referencedColumnName: 'id',
     foreignKeyConstraintName: 'FK_jira_integration_user_id',
   })
-  @OneToOne(() => UserEntity, (user) => user.jiraIntegration)
+  @ManyToOne(() => UserEntity, (user) => user.jiraIntegrations)
   user: Relation<UserEntity>;
+
+  @Index('UQ_jira_integration_project_id', { unique: true })
+  @Column({ name: 'project_id' })
+  projectId!: Uuid;
+
+  @JoinColumn({
+    name: 'project_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'FK_jira_integration_project_id',
+  })
+  @ManyToOne(() => ProjectEntity)
+  project: Relation<ProjectEntity>;
 
   @OneToMany(
     () => JiraStatusMappingEntity,

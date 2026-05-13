@@ -11,6 +11,9 @@ export class CreateTodoTable1778404968213 implements MigrationInterface {
             CREATE TYPE "public"."todo_jira_sync_status_enum" AS ENUM('NOT_LINKED', 'SYNCED', 'PENDING', 'FAILED')
         `);
     await queryRunner.query(`
+            CREATE TYPE "public"."jira_integration_auth_type_enum" AS ENUM('BASIC', 'BEARER')
+        `);
+    await queryRunner.query(`
             CREATE TABLE "todo" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "title" character varying(255) NOT NULL,
@@ -51,8 +54,8 @@ export class CreateTodoTable1778404968213 implements MigrationInterface {
             CREATE TABLE "jira_status_mapping" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "todo_status_id" uuid NOT NULL,
-                "jira_status_id" character varying(100) NOT NULL,
-                "jira_status_name" character varying(100),
+                "jira_transition_id" character varying(100) NOT NULL,
+                "jira_transition_name" character varying(100),
                 "jira_integration_id" uuid NOT NULL,
                 "deleted_at" TIMESTAMP WITH TIME ZONE,
                 "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -67,7 +70,8 @@ export class CreateTodoTable1778404968213 implements MigrationInterface {
             CREATE TABLE "jira_integration" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "jira_domain" character varying(255) NOT NULL,
-                "jira_email" character varying(255) NOT NULL,
+                "jira_email" character varying(255),
+                "auth_type" "public"."jira_integration_auth_type_enum" NOT NULL DEFAULT 'BASIC',
                 "jira_api_token" character varying NOT NULL,
                 "jira_project_key" character varying(50),
                 "user_id" uuid NOT NULL,
@@ -145,6 +149,9 @@ export class CreateTodoTable1778404968213 implements MigrationInterface {
         `);
     await queryRunner.query(`
             DROP TYPE "public"."todo_jira_sync_status_enum"
+        `);
+    await queryRunner.query(`
+            DROP TYPE "public"."jira_integration_auth_type_enum"
         `);
     await queryRunner.query(`
             DROP TYPE "public"."todo_priority_enum"

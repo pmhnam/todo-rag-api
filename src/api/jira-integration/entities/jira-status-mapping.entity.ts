@@ -37,11 +37,11 @@ export class JiraStatusMappingEntity extends AbstractEntity {
   @ManyToOne(() => TodoStatusEntity)
   todoStatus: Relation<TodoStatusEntity>;
 
-  @Column({ name: 'jira_status_id', length: 100 })
-  jiraStatusId!: string;
+  @Column({ name: 'jira_transition_id', length: 100 })
+  jiraTransitionId!: string;
 
-  @Column({ name: 'jira_status_name', length: 100, nullable: true })
-  jiraStatusName?: string;
+  @Column({ name: 'jira_transition_name', length: 100, nullable: true })
+  jiraTransitionName?: string;
 
   @Column({ name: 'jira_integration_id' })
   jiraIntegrationId!: Uuid;

@@ -14,7 +14,6 @@ import {
   Entity,
   Index,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   Relation,
 } from 'typeorm';
@@ -75,8 +74,8 @@ export class UserEntity extends AbstractEntity {
   @OneToMany(() => TodoStatusEntity, (status) => status.user)
   todoStatuses: Relation<TodoStatusEntity[]>;
 
-  @OneToOne(() => JiraIntegrationEntity, (jira) => jira.user)
-  jiraIntegration: Relation<JiraIntegrationEntity>;
+  @OneToMany(() => JiraIntegrationEntity, (jira) => jira.user)
+  jiraIntegrations: Relation<JiraIntegrationEntity[]>;
 
   @BeforeInsert()
   @BeforeUpdate()
