@@ -45,10 +45,14 @@ export class SearchService {
     const results = await this.chunkRepo
       .createQueryBuilder('chunk')
       .select(['chunk.id', 'chunk.content', 'chunk.sourceId', 'chunk.metadata'])
-      .addSelect(`chunk.embedding <=> '${vectorStr}'`, 'distance')
+      .addSelect(
+        'chunk.embedding <=> CAST(:queryEmbedding AS vector)',
+        'distance',
+      )
       .where('chunk.user_id = :userId', { userId })
       .andWhere('chunk.embedding IS NOT NULL')
-      .orderBy(`chunk.embedding <=> '${vectorStr}'`, 'ASC')
+      .orderBy('chunk.embedding <=> CAST(:queryEmbedding AS vector)', 'ASC')
+      .setParameter('queryEmbedding', vectorStr)
       .limit(topK)
       .getRawAndEntities();
 

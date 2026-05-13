@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
 export class ChatReqDto {
   @ApiProperty({
@@ -19,4 +19,12 @@ export class ChatReqDto {
   @Min(1)
   @Max(20)
   topK?: number;
+
+  @ApiProperty({
+    description: 'Current project/board ID for task agent actions',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  projectId?: string;
 }

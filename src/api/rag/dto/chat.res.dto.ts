@@ -25,4 +25,15 @@ export class ChatResDto {
     type: [ContextChunkDto],
   })
   contextChunks: ContextChunkDto[];
+
+  @ApiProperty({
+    description: 'Task agent tool calls executed while producing the response',
+    required: false,
+    isArray: true,
+  })
+  toolCalls?: Array<{
+    toolName: string;
+    input: unknown;
+    output?: unknown;
+  }>;
 }

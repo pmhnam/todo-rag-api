@@ -105,21 +105,18 @@ export class TodoService {
       throw new ValidationException(ErrorCode.E111);
     }
 
-    if (!reqDto.aiSummary && reqDto.title && reqDto.description) {
-      try {
-        const prompt = `Bạn là một trợ lý ảo thông minh. Hãy tóm tắt ngắn gọn (trong khoảng 1-2 câu) mục tiêu của công việc sau. Tên công việc: "${reqDto.title}". Mô tả chi tiết: "${reqDto.description}". Trả về trực tiếp phần tóm tắt, không giải thích gì thêm.`;
-        const res = await this.llmService.generate(prompt);
-        if (res.content) {
-          reqDto = {
-            ...reqDto,
-            aiSummary: res.content.trim(),
-            generatedByAi: true,
-          };
-        }
-      } catch (err) {
-        this.logger.warn(
-          `Failed to generate AI summary for todo: ${err.message}`,
-        );
+    if (!reqDto.aiSummary) {
+      const aiSummary = await this.generateAiSummary(
+        reqDto.title,
+        reqDto.description,
+      );
+
+      if (aiSummary) {
+        reqDto = {
+          ...reqDto,
+          aiSummary,
+          generatedByAi: true,
+        };
       }
     }
 
@@ -175,6 +172,21 @@ export class TodoService {
       }
 
       todo.status = status;
+    }
+
+    if (!todo.aiSummary && !reqDto.aiSummary) {
+      const aiSummary = await this.generateAiSummary(
+        reqDto.title ?? todo.title,
+        reqDto.description ?? todo.description,
+      );
+
+      if (aiSummary) {
+        reqDto = {
+          ...reqDto,
+          aiSummary,
+          generatedByAi: true,
+        };
+      }
     }
 
     Object.assign(todo, reqDto);
@@ -281,6 +293,25 @@ export class TodoService {
         status: todo.status?.name,
       },
     );
+  }
+
+  private async generateAiSummary(
+    title?: string,
+    description?: string,
+  ): Promise<string | undefined> {
+    if (!title || !description) return undefined;
+
+    try {
+      const prompt = `Bạn là một trợ lý ảo thông minh. Hãy tóm tắt ngắn gọn (trong khoảng 1-2 câu) mục tiêu của công việc sau. Tên công việc: "${title}". Mô tả chi tiết: "${description}". Trả về trực tiếp phần tóm tắt, không giải thích gì thêm.`;
+      const res = await this.llmService.generate(prompt);
+
+      return res.content?.trim();
+    } catch (err) {
+      this.logger.warn(
+        `Failed to generate AI summary for todo: ${err.message}`,
+      );
+      return undefined;
+    }
   }
 
   private async syncJiraStatusAfterLocalMove(

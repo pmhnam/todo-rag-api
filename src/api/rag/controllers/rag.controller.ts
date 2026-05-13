@@ -94,6 +94,7 @@ export class RagController {
       conversationId,
       reqDto.message,
       reqDto.topK,
+      reqDto.projectId as Uuid | undefined,
     );
   }
 

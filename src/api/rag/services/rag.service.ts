@@ -4,17 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RagConversationEntity } from '../entities/rag-conversation.entity';
 import { RagMessageEntity } from '../entities/rag-message.entity';
-import { ChatMessage } from '../interfaces/llm.types';
-import { LlmService } from './llm.service';
 import { SearchService } from './search.service';
-
-const RAG_SYSTEM_PROMPT = `You are a helpful AI assistant. Answer the user's question based on the provided context.
-If the context contains relevant information, use it to provide an accurate answer.
-If the context doesn't contain enough information, say so honestly.
-Always be concise and helpful.
-
-Context:
-{context}`;
+import { TaskAgentService, TaskAgentToolCall } from './task-agent.service';
 
 @Injectable()
 export class RagService {
@@ -26,7 +17,7 @@ export class RagService {
     @InjectRepository(RagMessageEntity)
     private readonly messageRepo: Repository<RagMessageEntity>,
     private readonly searchService: SearchService,
-    private readonly llmService: LlmService,
+    private readonly taskAgentService: TaskAgentService,
   ) {}
 
   /**
@@ -37,7 +28,12 @@ export class RagService {
     conversationId: Uuid,
     userMessage: string,
     topK: number = 5,
-  ): Promise<{ response: string; contextChunks: any[] }> {
+    projectId?: Uuid,
+  ): Promise<{
+    response: string;
+    contextChunks: any[];
+    toolCalls?: TaskAgentToolCall[];
+  }> {
     // 1. Verify conversation belongs to user
     const conversation = await this.getConversation(conversationId, userId);
 
@@ -67,27 +63,14 @@ export class RagService {
       take: 20, // Last 20 messages for context window
     });
 
-    // 4. Build LLM messages
-    const systemPrompt = RAG_SYSTEM_PROMPT.replace(
-      '{context}',
-      context || 'No relevant context found.',
-    );
-
-    const messages: ChatMessage[] = [{ role: 'system', content: systemPrompt }];
-
-    // Add conversation history
-    for (const msg of previousMessages) {
-      messages.push({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-      });
-    }
-
-    // Add current user message
-    messages.push({ role: 'user', content: userMessage });
-
-    // 5. Call LLM
-    const llmResponse = await this.llmService.chat(messages);
+    // 4. Call task agent with AI SDK tool calling.
+    const agentResponse = await this.taskAgentService.chat({
+      userId,
+      userMessage,
+      previousMessages,
+      projectId,
+      ragContext: context,
+    });
 
     // 6. Save user message
     await this.messageRepo.save(
@@ -96,7 +79,6 @@ export class RagService {
         role: 'user',
         content: userMessage,
         contextChunks,
-        tokenCount: llmResponse.tokenUsage?.promptTokens,
       }),
     );
 
@@ -105,8 +87,7 @@ export class RagService {
       this.messageRepo.create({
         conversationId,
         role: 'assistant',
-        content: llmResponse.content,
-        tokenCount: llmResponse.tokenUsage?.completionTokens,
+        content: agentResponse.text,
       }),
     );
 
@@ -118,8 +99,9 @@ export class RagService {
     }
 
     return {
-      response: llmResponse.content,
+      response: agentResponse.text,
       contextChunks,
+      toolCalls: agentResponse.toolCalls,
     };
   }
 

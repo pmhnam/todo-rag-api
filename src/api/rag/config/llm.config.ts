@@ -11,7 +11,7 @@ export default registerAs<LlmConfig>('llm', () => ({
   openrouterBaseUrl:
     process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
   openrouterApiKey: process.env.OPENROUTER_API_KEY,
-  openrouterModel: process.env.OPENROUTER_MODEL || 'google/gemma-2-9b-it:free',
+  openrouterModel: process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini',
   // Gemini specific
   geminiApiKey: process.env.GEMINI_API_KEY,
   geminiEmbedModel: process.env.GEMINI_EMBED_MODEL || 'text-embedding-004',

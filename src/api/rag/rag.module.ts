@@ -1,10 +1,12 @@
 import { PostEntity } from '@/api/post/entities/post.entity';
+import { TodoStatusEntity } from '@/api/todo/entities/todo-status.entity';
 import { TodoEntity } from '@/api/todo/entities/todo.entity';
 import { EMBEDDING_QUEUE } from '@/background/queues/embedding-queue/embedding-queue.constant';
 import { HttpModule } from '@nestjs/axios';
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JiraIntegrationModule } from '../jira-integration/jira-integration.module';
 import { IndexingController } from './controllers/indexing.controller';
 import { RagController } from './controllers/rag.controller';
 import { EmbeddingChunkEntity } from './entities/embedding-chunk.entity';
@@ -24,6 +26,7 @@ import { IndexingService } from './services/indexing.service';
 import { LlmService } from './services/llm.service';
 import { RagService } from './services/rag.service';
 import { SearchService } from './services/search.service';
+import { TaskAgentService } from './services/task-agent.service';
 
 @Module({
   imports: [
@@ -33,12 +36,14 @@ import { SearchService } from './services/search.service';
       RagConversationEntity,
       RagMessageEntity,
       TodoEntity,
+      TodoStatusEntity,
       PostEntity,
     ]),
     HttpModule,
     BullModule.registerQueue({
       name: EMBEDDING_QUEUE,
     }),
+    JiraIntegrationModule,
   ],
   controllers: [RagController, IndexingController],
   providers: [
@@ -50,6 +55,7 @@ import { SearchService } from './services/search.service';
     SearchService,
     LlmService,
     RagService,
+    TaskAgentService,
     // Embedding Providers
     OllamaEmbeddingProvider,
     GeminiEmbeddingProvider,
