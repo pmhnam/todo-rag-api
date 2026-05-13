@@ -2,24 +2,21 @@ import { EMBEDDING_QUEUE } from '@/background/queues/embedding-queue/embedding-q
 import { Uuid } from '@/common/types/common.type';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Queue } from 'bullmq';
 import * as crypto from 'crypto';
-import { Repository } from 'typeorm';
-import { EmbeddingChunkEntity } from '../entities/embedding-chunk.entity';
 import { EmbeddingSourceEntity } from '../entities/embedding-source.entity';
 import { EmbeddingStatus } from '../enums/embedding-status.enum';
 import { SourceType } from '../enums/source-type.enum';
+import { EmbeddingChunkRepository } from '../repositories/embedding-chunk.repository';
+import { EmbeddingSourceRepository } from '../repositories/embedding-source.repository';
 
 @Injectable()
 export class IndexingService {
   private readonly logger = new Logger(IndexingService.name);
 
   constructor(
-    @InjectRepository(EmbeddingSourceEntity)
-    private readonly sourceRepo: Repository<EmbeddingSourceEntity>,
-    @InjectRepository(EmbeddingChunkEntity)
-    private readonly chunkRepo: Repository<EmbeddingChunkEntity>,
+    private readonly sourceRepository: EmbeddingSourceRepository,
+    private readonly chunkRepository: EmbeddingChunkRepository,
     @InjectQueue(EMBEDDING_QUEUE)
     private readonly embeddingQueue: Queue,
   ) {}
@@ -38,9 +35,7 @@ export class IndexingService {
     const contentHash = this.hashContent(content);
 
     // Check if already indexed with same content
-    let source = await this.sourceRepo.findOne({
-      where: { sourceType, sourceId },
-    });
+    let source = await this.sourceRepository.findBySource(sourceType, sourceId);
 
     if (source) {
       if (source.contentHash === contentHash) {
@@ -59,10 +54,10 @@ export class IndexingService {
       source.metadata = metadata;
       source.status = EmbeddingStatus.PENDING;
       source.updatedBy = userId;
-      await this.sourceRepo.save(source);
+      await this.sourceRepository.save(source);
     } else {
       // New record
-      source = this.sourceRepo.create({
+      source = this.sourceRepository.create({
         userId,
         sourceType,
         sourceId,
@@ -72,7 +67,7 @@ export class IndexingService {
         createdBy: userId,
         updatedBy: userId,
       });
-      await this.sourceRepo.save(source);
+      await this.sourceRepository.save(source);
     }
 
     // Enqueue embedding job
@@ -113,13 +108,14 @@ export class IndexingService {
    * Remove embedding for a source record.
    */
   async removeIndex(sourceType: SourceType, sourceId: Uuid): Promise<void> {
-    const source = await this.sourceRepo.findOne({
-      where: { sourceType, sourceId },
-    });
+    const source = await this.sourceRepository.findBySource(
+      sourceType,
+      sourceId,
+    );
 
     if (source) {
       // Chunks are cascade-deleted via FK
-      await this.sourceRepo.remove(source);
+      await this.sourceRepository.remove(source);
       this.logger.log(`Removed index for ${sourceType}:${sourceId}`);
     }
   }
@@ -131,31 +127,21 @@ export class IndexingService {
     userId: Uuid,
     sourceType?: SourceType,
   ): Promise<EmbeddingSourceEntity[]> {
-    const where: any = { userId };
-    if (sourceType) {
-      where.sourceType = sourceType;
-    }
-
-    return this.sourceRepo.find({
-      where,
-      order: { createdAt: 'DESC' },
-    });
+    return this.sourceRepository.findManyOwned(userId, sourceType);
   }
 
   /**
    * Update source status.
    */
   async updateStatus(sourceId: Uuid, status: EmbeddingStatus): Promise<void> {
-    await this.sourceRepo.update(sourceId, { status });
+    await this.sourceRepository.updateStatus(sourceId, status);
   }
 
   /**
    * Get a source by ID.
    */
   async findSource(sourceId: Uuid): Promise<EmbeddingSourceEntity> {
-    const source = await this.sourceRepo.findOne({
-      where: { id: sourceId },
-    });
+    const source = await this.sourceRepository.findById(sourceId);
 
     if (!source) {
       throw new NotFoundException(`Embedding source ${sourceId} not found`);
@@ -165,7 +151,7 @@ export class IndexingService {
   }
 
   private async removeChunks(sourceId: Uuid): Promise<void> {
-    await this.chunkRepo.delete({ sourceId });
+    await this.chunkRepository.deleteBySourceId(sourceId);
   }
 
   private hashContent(content: string): string {

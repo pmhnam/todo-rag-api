@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ListTodoReqDto } from '../dto/list-todo.req.dto';
 import { TodoEntity } from '../entities/todo.entity';
+import { TodoPriority } from '../enums/todo-priority.enum';
 
 @Injectable()
 export class TodoRepository {
@@ -65,6 +66,47 @@ export class TodoRepository {
       where: { id, userId },
       relations: ['status'],
     });
+  }
+
+  findOwnedForAgent(
+    userId: Uuid,
+    params: {
+      projectId?: Uuid;
+      query?: string;
+      statusId?: Uuid;
+      priority?: TodoPriority;
+    },
+  ): Promise<TodoEntity[]> {
+    const query = this.repository
+      .createQueryBuilder('todo')
+      .leftJoinAndSelect('todo.status', 'status')
+      .where('todo.user_id = :userId', { userId })
+      .orderBy('todo.updatedAt', 'DESC')
+      .take(10);
+
+    if (params.projectId) {
+      query.andWhere('todo.project_id = :projectId', {
+        projectId: params.projectId,
+      });
+    }
+
+    if (params.query) {
+      query.andWhere('todo.title ILIKE :q', { q: `%${params.query}%` });
+    }
+
+    if (params.statusId) {
+      query.andWhere('todo.status_id = :statusId', {
+        statusId: params.statusId,
+      });
+    }
+
+    if (params.priority) {
+      query.andWhere('todo.priority = :priority', {
+        priority: params.priority,
+      });
+    }
+
+    return query.getMany();
   }
 
   create(data: Partial<TodoEntity>): TodoEntity {

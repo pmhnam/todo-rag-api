@@ -1,32 +1,20 @@
 import { Uuid } from '@/common/types/common.type';
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { EmbeddingChunkEntity } from '../entities/embedding-chunk.entity';
+import { EmbeddingChunkRepository } from '../repositories/embedding-chunk.repository';
+import { SearchResult } from '../types/rag.types';
 import { EmbeddingService } from './embedding.service';
-
-export interface SearchResult {
-  chunkId: Uuid;
-  content: string;
-  sourceId: Uuid;
-  distance: number;
-  metadata?: Record<string, any>;
-}
+import { RagPromptBuilderService } from './rag-prompt-builder.service';
 
 @Injectable()
 export class SearchService {
   private readonly logger = new Logger(SearchService.name);
 
   constructor(
-    @InjectRepository(EmbeddingChunkEntity)
-    private readonly chunkRepo: Repository<EmbeddingChunkEntity>,
+    private readonly embeddingChunkRepository: EmbeddingChunkRepository,
     private readonly embeddingService: EmbeddingService,
+    private readonly ragPromptBuilderService: RagPromptBuilderService,
   ) {}
 
-  /**
-   * Perform vector similarity search for a user's embeddings.
-   * Uses cosine distance (<=>) with pgvector.
-   */
   async search(
     userId: Uuid,
     query: string,
@@ -36,49 +24,15 @@ export class SearchService {
       `Vector search: userId=${userId}, query="${query.slice(0, 50)}...", topK=${topK}`,
     );
 
-    // 1. Embed the query
     const queryEmbedding = await this.embeddingService.embedSingle(query);
-
-    // 2. Vector similarity search with user filter
-    const vectorStr = `[${queryEmbedding.join(',')}]`;
-
-    const results = await this.chunkRepo
-      .createQueryBuilder('chunk')
-      .select(['chunk.id', 'chunk.content', 'chunk.sourceId', 'chunk.metadata'])
-      .addSelect(
-        'chunk.embedding <=> CAST(:queryEmbedding AS vector)',
-        'distance',
-      )
-      .where('chunk.user_id = :userId', { userId })
-      .andWhere('chunk.embedding IS NOT NULL')
-      .orderBy('chunk.embedding <=> CAST(:queryEmbedding AS vector)', 'ASC')
-      .setParameter('queryEmbedding', vectorStr)
-      .limit(topK)
-      .getRawAndEntities();
-
-    // Map results with distance scores
-    return results.entities.map((entity, idx) => ({
-      chunkId: entity.id,
-      content: entity.content,
-      sourceId: entity.sourceId,
-      distance: parseFloat(results.raw[idx]?.distance || '0'),
-      metadata: entity.metadata,
-    }));
+    return this.embeddingChunkRepository.vectorSearch(
+      userId,
+      queryEmbedding,
+      topK,
+    );
   }
 
-  /**
-   * Build context string from search results.
-   * This is the text that gets prepended to the LLM prompt.
-   */
   buildContext(results: SearchResult[]): string {
-    if (results.length === 0) {
-      return '';
-    }
-
-    const contextParts = results.map((r, i) => {
-      return `[Source ${i + 1}] ${r.content}`;
-    });
-
-    return contextParts.join('\n\n');
+    return this.ragPromptBuilderService.buildContext(results);
   }
 }
