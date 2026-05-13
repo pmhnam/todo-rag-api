@@ -6,8 +6,24 @@ import { TodoStatusController } from './controllers/todo-status.controller';
 import { TodoController } from './controllers/todo.controller';
 import { TodoStatusEntity } from './entities/todo-status.entity';
 import { TodoEntity } from './entities/todo.entity';
+import { TodoStatusRepository } from './repositories/todo-status.repository';
+import { TodoRepository } from './repositories/todo.repository';
+import { TodoAiSummaryService } from './services/todo-ai-summary.service';
+import { TodoIndexingService } from './services/todo-indexing.service';
+import { TodoJiraSyncService } from './services/todo-jira-sync.service';
 import { TodoStatusService } from './services/todo-status.service';
 import { TodoService } from './services/todo.service';
+import { CreateTodoStatusUseCase } from './use-cases/create-todo-status.use-case';
+import { CreateTodoUseCase } from './use-cases/create-todo.use-case';
+import { DeleteTodoStatusUseCase } from './use-cases/delete-todo-status.use-case';
+import { DeleteTodoUseCase } from './use-cases/delete-todo.use-case';
+import { FindTodoStatusesUseCase } from './use-cases/find-todo-statuses.use-case';
+import { FindTodosUseCase } from './use-cases/find-todos.use-case';
+import { GetTodoDetailUseCase } from './use-cases/get-todo-detail.use-case';
+import { GetTodoStatusDetailUseCase } from './use-cases/get-todo-status-detail.use-case';
+import { LinkJiraIssueUseCase } from './use-cases/link-jira-issue.use-case';
+import { UpdateTodoStatusUseCase } from './use-cases/update-todo-status.use-case';
+import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
 
 @Module({
   imports: [
@@ -16,7 +32,32 @@ import { TodoService } from './services/todo.service';
     JiraIntegrationModule,
   ],
   controllers: [TodoController, TodoStatusController],
-  providers: [TodoService, TodoStatusService],
-  exports: [TodoStatusService],
+  providers: [
+    TodoService,
+    TodoStatusService,
+    TodoRepository,
+    TodoStatusRepository,
+    TodoAiSummaryService,
+    TodoIndexingService,
+    TodoJiraSyncService,
+    FindTodosUseCase,
+    GetTodoDetailUseCase,
+    CreateTodoUseCase,
+    UpdateTodoUseCase,
+    LinkJiraIssueUseCase,
+    DeleteTodoUseCase,
+    FindTodoStatusesUseCase,
+    GetTodoStatusDetailUseCase,
+    CreateTodoStatusUseCase,
+    UpdateTodoStatusUseCase,
+    DeleteTodoStatusUseCase,
+  ],
+  exports: [
+    TodoStatusService,
+    FindTodosUseCase,
+    GetTodoDetailUseCase,
+    CreateTodoUseCase,
+    UpdateTodoUseCase,
+  ],
 })
 export class TodoModule {}
