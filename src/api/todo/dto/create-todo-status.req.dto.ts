@@ -2,9 +2,13 @@ import {
   NumberFieldOptional,
   StringField,
   StringFieldOptional,
+  UUIDField,
 } from '@/decorators/field.decorators';
 
 export class CreateTodoStatusReqDto {
+  @UUIDField({ description: 'ID of the project' })
+  readonly projectId: string;
+
   @StringField({ maxLength: 100 })
   readonly name: string;
 

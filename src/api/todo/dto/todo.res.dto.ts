@@ -1,5 +1,6 @@
 import { WrapperType } from '@/common/types/types';
 import {
+  BooleanFieldOptional,
   ClassFieldOptional,
   DateField,
   DateFieldOptional,
@@ -11,6 +12,7 @@ import {
 import { Exclude, Expose } from 'class-transformer';
 import { JiraSyncStatus } from '../enums/jira-sync-status.enum';
 import { TodoPriority } from '../enums/todo-priority.enum';
+import { ExternalLinkDto } from './create-todo.req.dto';
 import { TodoStatusResDto } from './todo-status.res.dto';
 
 @Exclude()
@@ -18,6 +20,10 @@ export class TodoResDto {
   @UUIDField()
   @Expose()
   id: string;
+
+  @UUIDField()
+  @Expose()
+  projectId: string;
 
   @StringField()
   @Expose()
@@ -71,4 +77,20 @@ export class TodoResDto {
   @DateField()
   @Expose()
   updatedAt: Date;
+
+  @StringFieldOptional({ each: true })
+  @Expose()
+  tags?: string[];
+
+  @ClassFieldOptional(() => ExternalLinkDto, { each: true })
+  @Expose()
+  externalLinks?: ExternalLinkDto[];
+
+  @StringFieldOptional()
+  @Expose()
+  aiSummary?: string;
+
+  @BooleanFieldOptional()
+  @Expose()
+  generatedByAi?: boolean;
 }

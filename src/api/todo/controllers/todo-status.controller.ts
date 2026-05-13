@@ -1,4 +1,3 @@
-import { PageOptionsDto } from '@/common/dto/offset-pagination/page-options.dto';
 import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { Uuid } from '@/common/types/common.type';
 import { CurrentUser } from '@/decorators/current-user.decorator';
@@ -18,6 +17,7 @@ import {
 } from '@nestjs/common';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { CreateTodoStatusReqDto } from '../dto/create-todo-status.req.dto';
+import { ListTodoStatusReqDto } from '../dto/list-todo-status.req.dto';
 import { TodoStatusResDto } from '../dto/todo-status.res.dto';
 import { UpdateTodoStatusReqDto } from '../dto/update-todo-status.req.dto';
 import { TodoStatusService } from '../services/todo-status.service';
@@ -38,7 +38,7 @@ export class TodoStatusController {
   })
   async findAll(
     @CurrentUser('id') userId: Uuid,
-    @Query() reqDto: PageOptionsDto,
+    @Query() reqDto: ListTodoStatusReqDto,
   ): Promise<OffsetPaginatedDto<TodoStatusResDto>> {
     return this.todoStatusService.findAll(userId, reqDto);
   }

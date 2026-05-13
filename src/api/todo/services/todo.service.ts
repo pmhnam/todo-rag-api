@@ -1,4 +1,5 @@
 import { IndexingService } from '@/api/rag/services/indexing.service';
+import { LlmService } from '@/api/rag/services/llm.service';
 import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { Uuid } from '@/common/types/common.type';
 import { ErrorCode } from '@/constants/error-code.constant';
@@ -26,6 +27,7 @@ export class TodoService {
     @InjectRepository(TodoStatusEntity)
     private readonly todoStatusRepository: Repository<TodoStatusEntity>,
     private readonly indexingService: IndexingService,
+    private readonly llmService: LlmService,
   ) {}
 
   async findMany(
@@ -35,7 +37,10 @@ export class TodoService {
     const query = this.todoRepository
       .createQueryBuilder('todo')
       .leftJoinAndSelect('todo.status', 'status')
-      .where('todo.user_id = :userId', { userId });
+      .where('todo.user_id = :userId', { userId })
+      .andWhere('todo.project_id = :projectId', {
+        projectId: reqDto.projectId,
+      });
 
     if (reqDto.statusId) {
       query.andWhere('todo.status_id = :statusId', {
@@ -83,18 +88,41 @@ export class TodoService {
   }
 
   async create(userId: Uuid, reqDto: CreateTodoReqDto): Promise<TodoResDto> {
-    // Verify the status belongs to this user
+    // Verify the status belongs to this user and project
     const status = await this.todoStatusRepository.findOne({
-      where: { id: reqDto.statusId as Uuid, userId },
+      where: {
+        id: reqDto.statusId as Uuid,
+        projectId: reqDto.projectId as Uuid,
+        userId,
+      },
     });
 
     if (!status) {
       throw new ValidationException(ErrorCode.E111);
     }
 
+    if (!reqDto.aiSummary) {
+      try {
+        const prompt = `Bạn là một trợ lý ảo thông minh. Hãy tóm tắt ngắn gọn (trong khoảng 1-2 câu) mục tiêu của công việc sau. Tên công việc: "${reqDto.title}". ${reqDto.description ? `Mô tả chi tiết: "${reqDto.description}".` : ''} Trả về trực tiếp phần tóm tắt, không giải thích gì thêm.`;
+        const res = await this.llmService.generate(prompt);
+        if (res.content) {
+          reqDto = {
+            ...reqDto,
+            aiSummary: res.content.trim(),
+            generatedByAi: true,
+          };
+        }
+      } catch (err) {
+        this.logger.warn(
+          `Failed to generate AI summary for todo: ${err.message}`,
+        );
+      }
+    }
+
     const todo = this.todoRepository.create({
       ...reqDto,
       statusId: reqDto.statusId as Uuid,
+      projectId: reqDto.projectId as Uuid,
       userId,
       createdBy: userId,
       updatedBy: userId,
@@ -124,10 +152,14 @@ export class TodoService {
       throw new NotFoundException({ errorCode: ErrorCode.E110 });
     }
 
-    // If statusId changes, verify the new status belongs to this user
+    // If statusId changes, verify the new status belongs to this user and the same project
     if (reqDto.statusId && reqDto.statusId !== todo.statusId) {
       const status = await this.todoStatusRepository.findOne({
-        where: { id: reqDto.statusId as Uuid, userId },
+        where: {
+          id: reqDto.statusId as Uuid,
+          projectId: todo.projectId,
+          userId,
+        },
       });
 
       if (!status) {

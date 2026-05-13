@@ -1,3 +1,4 @@
+import { ProjectEntity } from '@/api/project/entities/project.entity';
 import { UserEntity } from '@/api/user/entities/user.entity';
 import { Uuid } from '@/common/types/common.type';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
@@ -10,6 +11,7 @@ import {
   PrimaryGeneratedColumn,
   Relation,
 } from 'typeorm';
+import { ExternalLinkDto } from '../dto/create-todo.req.dto';
 import { JiraSyncStatus } from '../enums/jira-sync-status.enum';
 import { TodoPriority } from '../enums/todo-priority.enum';
 import { TodoStatusEntity } from './todo-status.entity';
@@ -63,6 +65,17 @@ export class TodoEntity extends AbstractEntity {
   @ManyToOne(() => UserEntity, (user) => user.todos)
   user: Relation<UserEntity>;
 
+  @Column({ name: 'project_id', nullable: true })
+  projectId?: Uuid;
+
+  @JoinColumn({
+    name: 'project_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'FK_todo_project_id',
+  })
+  @ManyToOne(() => ProjectEntity, (project) => project.todos)
+  project: Relation<ProjectEntity>;
+
   // --- Jira Integration Fields ---
 
   @Column({ name: 'jira_issue_id', length: 50, nullable: true })
@@ -91,4 +104,21 @@ export class TodoEntity extends AbstractEntity {
     default: null,
   })
   deletedAt: Date;
+
+  @Column({ name: 'tags', type: 'varchar', array: true, nullable: true })
+  tags?: string[];
+
+  @Column({ name: 'external_links', type: 'jsonb', nullable: true })
+  externalLinks?: ExternalLinkDto[];
+
+  @Column({ name: 'ai_summary', type: 'text', nullable: true })
+  aiSummary?: string;
+
+  @Column({
+    name: 'generated_by_ai',
+    type: 'boolean',
+    nullable: true,
+    default: false,
+  })
+  generatedByAi?: boolean;
 }

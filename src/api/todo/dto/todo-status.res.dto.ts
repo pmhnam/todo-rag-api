@@ -13,6 +13,10 @@ export class TodoStatusResDto {
   @Expose()
   id: string;
 
+  @UUIDField()
+  @Expose()
+  projectId: string;
+
   @StringField()
   @Expose()
   name: string;

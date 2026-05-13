@@ -1,4 +1,3 @@
-import { PageOptionsDto } from '@/common/dto/offset-pagination/page-options.dto';
 import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { Uuid } from '@/common/types/common.type';
 import { SYSTEM_USER_ID } from '@/constants/app.constant';
@@ -10,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { CreateTodoStatusReqDto } from '../dto/create-todo-status.req.dto';
+import { ListTodoStatusReqDto } from '../dto/list-todo-status.req.dto';
 import { TodoStatusResDto } from '../dto/todo-status.res.dto';
 import { UpdateTodoStatusReqDto } from '../dto/update-todo-status.req.dto';
 import { TodoStatusEntity } from '../entities/todo-status.entity';
@@ -29,13 +29,14 @@ export class TodoStatusService {
   ) {}
 
   /**
-   * Seed default statuses for a new user (called after registration).
+   * Seed default statuses for a project.
    */
-  async seedDefaultStatuses(userId: Uuid): Promise<void> {
+  async seedDefaultStatuses(projectId: Uuid, userId: Uuid): Promise<void> {
     const statuses = DEFAULT_TODO_STATUSES.map((s) =>
       this.todoStatusRepository.create({
         ...s,
         userId,
+        projectId,
         createdBy: SYSTEM_USER_ID,
         updatedBy: SYSTEM_USER_ID,
       }),
@@ -45,11 +46,14 @@ export class TodoStatusService {
 
   async findAll(
     userId: Uuid,
-    reqDto: PageOptionsDto,
+    reqDto: ListTodoStatusReqDto,
   ): Promise<OffsetPaginatedDto<TodoStatusResDto>> {
     const query = this.todoStatusRepository
       .createQueryBuilder('status')
       .where('status.user_id = :userId', { userId })
+      .andWhere('status.project_id = :projectId', {
+        projectId: reqDto.projectId,
+      })
       .orderBy('status.order', 'ASC')
       .addOrderBy('status.createdAt', 'ASC');
 
@@ -86,6 +90,7 @@ export class TodoStatusService {
   ): Promise<TodoStatusResDto> {
     const status = this.todoStatusRepository.create({
       ...reqDto,
+      projectId: reqDto.projectId as Uuid,
       userId,
       createdBy: userId,
       updatedBy: userId,

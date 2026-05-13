@@ -1,5 +1,6 @@
 import { JiraIntegrationEntity } from '@/api/jira-integration/entities/jira-integration.entity';
 import { PostEntity } from '@/api/post/entities/post.entity';
+import { ProjectEntity } from '@/api/project/entities/project.entity';
 import { TodoStatusEntity } from '@/api/todo/entities/todo-status.entity';
 import { TodoEntity } from '@/api/todo/entities/todo.entity';
 import { Uuid } from '@/common/types/common.type';
@@ -64,6 +65,9 @@ export class UserEntity extends AbstractEntity {
 
   @OneToMany(() => PostEntity, (post) => post.user)
   posts: Relation<PostEntity[]>;
+
+  @OneToMany(() => ProjectEntity, (project) => project.user)
+  projects: Relation<ProjectEntity[]>;
 
   @OneToMany(() => TodoEntity, (todo) => todo.user)
   todos: Relation<TodoEntity[]>;

@@ -59,6 +59,6 @@ import { SearchService } from './services/search.service';
     OpenRouterProvider,
     LlmProviderFactory,
   ],
-  exports: [IndexingService, EmbeddingService, ChunkingService],
+  exports: [IndexingService, EmbeddingService, ChunkingService, LlmService],
 })
 export class RagModule {}

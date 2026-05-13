@@ -1,3 +1,4 @@
+import { ProjectEntity } from '@/api/project/entities/project.entity';
 import { UserEntity } from '@/api/user/entities/user.entity';
 import { Uuid } from '@/common/types/common.type';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
@@ -44,6 +45,17 @@ export class TodoStatusEntity extends AbstractEntity {
   })
   @ManyToOne(() => UserEntity, (user) => user.todoStatuses)
   user: Relation<UserEntity>;
+
+  @Column({ name: 'project_id', nullable: true })
+  projectId?: Uuid;
+
+  @JoinColumn({
+    name: 'project_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'FK_todo_status_project_id',
+  })
+  @ManyToOne(() => ProjectEntity, (project) => project.todoStatuses)
+  project: Relation<ProjectEntity>;
 
   @OneToMany(() => TodoEntity, (todo) => todo.status)
   todos: Relation<TodoEntity[]>;
