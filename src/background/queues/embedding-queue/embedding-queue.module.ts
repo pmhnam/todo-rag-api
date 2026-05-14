@@ -1,5 +1,5 @@
 import { EmbeddingChunkEntity } from '@/api/rag/entities/embedding-chunk.entity';
-import { RagModule } from '@/api/rag/rag.module';
+import { RagCoreModule } from '@/api/rag/rag-core.module';
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -12,7 +12,7 @@ import { EmbeddingQueueProcessor } from './embedding-queue.processor';
       name: EMBEDDING_QUEUE,
     }),
     TypeOrmModule.forFeature([EmbeddingChunkEntity]),
-    RagModule,
+    RagCoreModule,
   ],
   providers: [EmbeddingQueueProcessor],
 })

@@ -11,15 +11,22 @@ import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
+    // Foundational
     UserModule,
-    HealthModule,
     AuthModule,
-    HomeModule,
-    PostModule,
+
+    // Domain
     ProjectModule,
     TodoModule,
     JiraIntegrationModule,
+
+    // AI/RAG
     RagModule,
+
+    // Utility
+    HealthModule,
+    HomeModule,
+    PostModule,
   ],
 })
 export class ApiModule {}

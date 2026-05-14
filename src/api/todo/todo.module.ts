@@ -1,7 +1,7 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JiraIntegrationModule } from '../jira-integration/jira-integration.module';
-import { RagModule } from '../rag/rag.module';
+import { RagCoreModule } from '../rag/rag-core.module';
 import { TodoStatusController } from './controllers/todo-status.controller';
 import { TodoController } from './controllers/todo.controller';
 import { TodoStatusEntity } from './entities/todo-status.entity';
@@ -30,7 +30,7 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
 @Module({
   imports: [
     TypeOrmModule.forFeature([TodoEntity, TodoStatusEntity]),
-    forwardRef(() => RagModule),
+    RagCoreModule,
     JiraIntegrationModule,
   ],
   controllers: [TodoController, TodoStatusController],
