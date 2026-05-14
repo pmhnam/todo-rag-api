@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class EnablePgvectorExtension1722352657869
-  implements MigrationInterface
-{
+export class EnablePgvectorExtension1722352657869 implements MigrationInterface {
   name = 'EnablePgvectorExtension1722352657869';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
