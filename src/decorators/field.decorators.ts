@@ -378,8 +378,12 @@ export function EnumField<TEnum extends object>(
 
   if (options.swagger !== false) {
     const { required = true, ...restOptions } = options;
+    const enumValues = Object.values(getEnum());
     decorators.push(
       ApiProperty({
+        type: enumValues.some((value) => typeof value === 'number')
+          ? Number
+          : String,
         enum: getEnum(),
         enumName: options.enumName || getVariableName(getEnum),
         isArray: options.each,

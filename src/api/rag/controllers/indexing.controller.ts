@@ -63,7 +63,9 @@ export class IndexingController {
   })
   @ApiQuery({
     name: 'sourceType',
+    type: String,
     enum: SourceType,
+    enumName: 'SourceType',
     required: false,
   })
   async listSources(

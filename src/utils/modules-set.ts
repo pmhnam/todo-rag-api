@@ -11,12 +11,12 @@ import { TypeOrmConfigService } from '@/database/typeorm-config.service';
 import mailConfig from '@/mail/config/mail.config';
 import { MailModule } from '@/mail/mail.module';
 import redisConfig from '@/redis/config/redis.config';
+import { createKeyvNonBlocking } from '@keyv/redis';
 import { BullModule } from '@nestjs/bullmq';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ModuleMetadata } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { redisStore } from 'cache-manager-ioredis-yet';
 import {
   AcceptLanguageResolver,
   HeaderResolver,
@@ -60,6 +60,9 @@ function generateModulesSet() {
   const bullModule = BullModule.forRootAsync({
     imports: [ConfigModule],
     useFactory: (configService: ConfigService<AllConfigType>) => {
+      const password = configService.get('redis.password', {
+        infer: true,
+      });
       return {
         connection: {
           host: configService.getOrThrow('redis.host', {
@@ -68,9 +71,7 @@ function generateModulesSet() {
           port: configService.getOrThrow('redis.port', {
             infer: true,
           }),
-          password: configService.getOrThrow('redis.password', {
-            infer: true,
-          }),
+          ...(password && { password }),
           tls: configService.get('redis.tlsEnabled', { infer: true }),
         },
       };
@@ -115,19 +116,28 @@ function generateModulesSet() {
   const cacheModule = CacheModule.registerAsync({
     imports: [ConfigModule],
     useFactory: async (configService: ConfigService<AllConfigType>) => {
+      const password = configService.get('redis.password', {
+        infer: true,
+      });
+      const tlsEnabled = configService.get('redis.tlsEnabled', { infer: true });
+      const redisUrl = new URL(
+        `${tlsEnabled ? 'rediss' : 'redis'}://localhost`,
+      );
+      redisUrl.hostname = configService.getOrThrow('redis.host', {
+        infer: true,
+      });
+      redisUrl.port = configService
+        .getOrThrow('redis.port', {
+          infer: true,
+        })
+        .toString();
+
+      if (password) {
+        redisUrl.password = password;
+      }
+
       return {
-        store: await redisStore({
-          host: configService.getOrThrow('redis.host', {
-            infer: true,
-          }),
-          port: configService.getOrThrow('redis.port', {
-            infer: true,
-          }),
-          password: configService.getOrThrow('redis.password', {
-            infer: true,
-          }),
-          tls: configService.get('redis.tlsEnabled', { infer: true }),
-        }),
+        stores: [createKeyvNonBlocking(redisUrl.toString())],
       };
     },
     isGlobal: true,

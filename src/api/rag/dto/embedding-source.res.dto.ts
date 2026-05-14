@@ -6,13 +6,17 @@ export class EmbeddingSourceResDto {
   @ApiProperty()
   id: string;
 
-  @ApiProperty({ enum: SourceType })
+  @ApiProperty({ type: String, enum: SourceType, enumName: 'SourceType' })
   sourceType: SourceType;
 
   @ApiProperty()
   sourceId: string;
 
-  @ApiProperty({ enum: EmbeddingStatus })
+  @ApiProperty({
+    type: String,
+    enum: EmbeddingStatus,
+    enumName: 'EmbeddingStatus',
+  })
   status: EmbeddingStatus;
 
   @ApiProperty({ required: false })

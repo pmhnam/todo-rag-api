@@ -146,7 +146,7 @@ export class AuthService {
   }
 
   async logout(userToken: JwtPayloadType): Promise<void> {
-    await this.cacheManager.store.set<boolean>(
+    await this.cacheManager.set<boolean>(
       createCacheKey(CacheKey.SESSION_BLACKLIST, userToken.sessionId),
       true,
       userToken.exp * 1000 - Date.now(),
@@ -192,7 +192,7 @@ export class AuthService {
     }
 
     // Force logout if the session is in the blacklist
-    const isSessionBlacklisted = await this.cacheManager.store.get<boolean>(
+    const isSessionBlacklisted = await this.cacheManager.get<boolean>(
       createCacheKey(CacheKey.SESSION_BLACKLIST, payload.sessionId),
     );
 

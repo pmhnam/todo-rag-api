@@ -4,7 +4,9 @@ import { SourceType } from '../enums/source-type.enum';
 
 export class IndexSourceReqDto {
   @ApiProperty({
+    type: String,
     enum: SourceType,
+    enumName: 'SourceType',
     description: 'Type of the source record',
     example: SourceType.TODO,
   })
