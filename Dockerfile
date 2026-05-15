@@ -11,7 +11,7 @@ RUN npm install -g pnpm
 # BUILD FOR LOCAL DEVELOPMENT
 #############################
 
-FROM base As development
+FROM base AS development
 WORKDIR /app
 RUN chown -R node:node /app
 
