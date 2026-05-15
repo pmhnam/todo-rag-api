@@ -1,8 +1,8 @@
-import { JiraIntegrationEntity } from '@/api/jira-integration/entities/jira-integration.entity';
-import { PostEntity } from '@/api/post/entities/post.entity';
-import { ProjectEntity } from '@/api/project/entities/project.entity';
-import { TodoStatusEntity } from '@/api/todo/entities/todo-status.entity';
-import { TodoEntity } from '@/api/todo/entities/todo.entity';
+import type { JiraIntegrationEntity } from '@/api/jira-integration/entities/jira-integration.entity';
+import type { PostEntity } from '@/api/post/entities/post.entity';
+import type { ProjectEntity } from '@/api/project/entities/project.entity';
+import type { TodoStatusEntity } from '@/api/todo/entities/todo-status.entity';
+import type { TodoEntity } from '@/api/todo/entities/todo.entity';
 import { Uuid } from '@/common/types/common.type';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
 import { hashPassword as hashPass } from '@/utils/password.util';
@@ -17,7 +17,7 @@ import {
   PrimaryGeneratedColumn,
   Relation,
 } from 'typeorm';
-import { SessionEntity } from './session.entity';
+import type { SessionEntity } from './session.entity';
 
 @Entity('user')
 export class UserEntity extends AbstractEntity {
@@ -59,22 +59,25 @@ export class UserEntity extends AbstractEntity {
   })
   deletedAt: Date;
 
-  @OneToMany(() => SessionEntity, (session) => session.user)
+  @OneToMany('SessionEntity', (session: SessionEntity) => session.user)
   sessions?: SessionEntity[];
 
-  @OneToMany(() => PostEntity, (post) => post.user)
+  @OneToMany('PostEntity', (post: PostEntity) => post.user)
   posts: Relation<PostEntity[]>;
 
-  @OneToMany(() => ProjectEntity, (project) => project.user)
+  @OneToMany('ProjectEntity', (project: ProjectEntity) => project.user)
   projects: Relation<ProjectEntity[]>;
 
-  @OneToMany(() => TodoEntity, (todo) => todo.user)
+  @OneToMany('TodoEntity', (todo: TodoEntity) => todo.user)
   todos: Relation<TodoEntity[]>;
 
-  @OneToMany(() => TodoStatusEntity, (status) => status.user)
+  @OneToMany('TodoStatusEntity', (status: TodoStatusEntity) => status.user)
   todoStatuses: Relation<TodoStatusEntity[]>;
 
-  @OneToMany(() => JiraIntegrationEntity, (jira) => jira.user)
+  @OneToMany(
+    'JiraIntegrationEntity',
+    (jira: JiraIntegrationEntity) => jira.user,
+  )
   jiraIntegrations: Relation<JiraIntegrationEntity[]>;
 
   @BeforeInsert()
