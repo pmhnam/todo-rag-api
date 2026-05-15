@@ -42,7 +42,7 @@ services:
     container_name: todo-rag-postgres
     restart: always
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
       # Mount a script to automatically enable the extension on startup
       - ./init-db:/docker-entrypoint-initdb.d
     environment:
