@@ -19,6 +19,23 @@ services:
       - todo-rag-network
       - shared_backend_net
 
+  migrate:
+    image: todo-rag-api
+    platform: linux/arm64
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    command: ['npm', 'run', 'migration:prod:up']
+    depends_on:
+      db:
+        condition: service_started
+    networks:
+      - todo-rag-network
+      - shared_backend_net
+    restart: 'no'
+
   db:
     image: pgvector/pgvector:pg18
     platform: linux/arm64
@@ -33,6 +50,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       TZ: 'UTC'
+    ports:
+      - '5432:5432'
     networks:
       - todo-rag-network
       - shared_backend_net
