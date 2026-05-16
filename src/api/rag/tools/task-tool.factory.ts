@@ -1,13 +1,23 @@
+import { CreateProjectReqDto } from '@/api/project/dto/create-project.req.dto';
+import { UpdateProjectReqDto } from '@/api/project/dto/update-project.req.dto';
 import { ProjectService } from '@/api/project/services/project.service';
+import { CreateTodoStatusReqDto } from '@/api/todo/dto/create-todo-status.req.dto';
 import { CreateTodoReqDto } from '@/api/todo/dto/create-todo.req.dto';
+import { LinkJiraIssueReqDto } from '@/api/todo/dto/link-jira-issue.req.dto';
 import { ListTodoStatusReqDto } from '@/api/todo/dto/list-todo-status.req.dto';
+import { UpdateTodoStatusReqDto } from '@/api/todo/dto/update-todo-status.req.dto';
 import { UpdateTodoReqDto } from '@/api/todo/dto/update-todo.req.dto';
 import { TodoPriority } from '@/api/todo/enums/todo-priority.enum';
+import { CreateTodoStatusUseCase } from '@/api/todo/use-cases/create-todo-status.use-case';
 import { CreateTodoUseCase } from '@/api/todo/use-cases/create-todo.use-case';
+import { DeleteTodoStatusUseCase } from '@/api/todo/use-cases/delete-todo-status.use-case';
+import { DeleteTodoUseCase } from '@/api/todo/use-cases/delete-todo.use-case';
 import { FindAgentTodosUseCase } from '@/api/todo/use-cases/find-agent-todos.use-case';
 import { FindTodoStatusesUseCase } from '@/api/todo/use-cases/find-todo-statuses.use-case';
 import { GetTodoDetailUseCase } from '@/api/todo/use-cases/get-todo-detail.use-case';
+import { LinkJiraIssueUseCase } from '@/api/todo/use-cases/link-jira-issue.use-case';
 import { ResolveTodoStatusUseCase } from '@/api/todo/use-cases/resolve-todo-status.use-case';
+import { UpdateTodoStatusUseCase } from '@/api/todo/use-cases/update-todo-status.use-case';
 import { UpdateTodoUseCase } from '@/api/todo/use-cases/update-todo.use-case';
 import { PageOptionsDto } from '@/common/dto/offset-pagination/page-options.dto';
 import { Uuid } from '@/common/types/common.type';
@@ -31,6 +41,11 @@ export class TaskToolFactory {
     private readonly findTodoStatusesUseCase: FindTodoStatusesUseCase,
     private readonly createTodoUseCase: CreateTodoUseCase,
     private readonly updateTodoUseCase: UpdateTodoUseCase,
+    private readonly linkJiraIssueUseCase: LinkJiraIssueUseCase,
+    private readonly deleteTodoUseCase: DeleteTodoUseCase,
+    private readonly createTodoStatusUseCase: CreateTodoStatusUseCase,
+    private readonly updateTodoStatusUseCase: UpdateTodoStatusUseCase,
+    private readonly deleteTodoStatusUseCase: DeleteTodoStatusUseCase,
     private readonly resolveTodoStatusUseCase: ResolveTodoStatusUseCase,
     private readonly projectService: ProjectService,
   ) {}
@@ -61,6 +76,54 @@ export class TaskToolFactory {
           return result.data.map((project) => toToolProject(project));
         },
       }),
+      createProject: tool({
+        description:
+          'Create a new project/board for the current user. Use only when the user clearly asks to create a project or board.',
+        inputSchema: z.object({
+          name: z.string().min(1).max(255),
+          description: nullableString,
+        }),
+        execute: async ({ name, description }) => {
+          const project = await this.projectService.create(context.userId, {
+            name,
+            description: description || undefined,
+          } as CreateProjectReqDto);
+
+          return toToolProject(project);
+        },
+      }),
+      updateProject: tool({
+        description:
+          'Update a project/board name or description. Use only after the projectId is known.',
+        inputSchema: z.object({
+          projectId: z.string().uuid(),
+          name: z.string().min(1).max(255).optional(),
+          description: nullableString,
+        }),
+        execute: async ({ projectId, name, description }) => {
+          const project = await this.projectService.update(
+            projectId as Uuid,
+            context.userId,
+            {
+              name,
+              description: description || undefined,
+            } as UpdateProjectReqDto,
+          );
+
+          return toToolProject(project);
+        },
+      }),
+      deleteProject: tool({
+        description:
+          'Delete a project/board owned by the current user. Use only when the user explicitly asks to delete a project and the projectId is known.',
+        inputSchema: z.object({
+          projectId: z.string().uuid(),
+        }),
+        execute: async ({ projectId }) => {
+          await this.projectService.delete(projectId as Uuid, context.userId);
+          return { id: projectId, deleted: true };
+        },
+      }),
       listTaskStatuses: tool({
         description:
           'List task statuses/columns for a project. Use this to resolve statusId or understand valid status names before moving or creating tasks.',
@@ -80,6 +143,70 @@ export class TaskToolFactory {
             reqDto,
           );
           return result.data.map((status) => toToolTodoStatus(status));
+        },
+      }),
+      createTaskStatus: tool({
+        description:
+          'Create a new task status/column in a project. Use only when the user clearly asks to add a status or column.',
+        inputSchema: z.object({
+          projectId: z.string().uuid(),
+          name: z.string().min(1).max(100),
+          order: z.number().int().min(0).optional(),
+          color: nullableString.describe(
+            'Optional color hex code, e.g. #FF5733',
+          ),
+        }),
+        execute: async ({ projectId, name, order, color }) => {
+          const status = await this.createTodoStatusUseCase.execute(
+            context.userId,
+            {
+              projectId,
+              name,
+              order,
+              color: color || undefined,
+            } as CreateTodoStatusReqDto,
+          );
+
+          return toToolTodoStatus(status);
+        },
+      }),
+      updateTaskStatusDefinition: tool({
+        description:
+          'Update a task status/column definition, such as name, order, or color. Do not use this to move a task; use updateTaskStatus for moving tasks.',
+        inputSchema: z.object({
+          statusId: z.string().uuid(),
+          name: z.string().min(1).max(100).optional(),
+          order: z.number().int().min(0).optional(),
+          color: nullableString.describe(
+            'Optional color hex code, e.g. #FF5733',
+          ),
+        }),
+        execute: async ({ statusId, name, order, color }) => {
+          const status = await this.updateTodoStatusUseCase.execute(
+            statusId as Uuid,
+            context.userId,
+            {
+              name,
+              order,
+              color: color || undefined,
+            } as UpdateTodoStatusReqDto,
+          );
+
+          return toToolTodoStatus(status);
+        },
+      }),
+      deleteTaskStatus: tool({
+        description:
+          'Delete an empty task status/column. The backend rejects deletion when the status still has tasks.',
+        inputSchema: z.object({
+          statusId: z.string().uuid(),
+        }),
+        execute: async ({ statusId }) => {
+          await this.deleteTodoStatusUseCase.execute(
+            statusId as Uuid,
+            context.userId,
+          );
+          return { id: statusId, deleted: true };
         },
       }),
       findTasks: tool({
@@ -172,6 +299,38 @@ export class TaskToolFactory {
             description: updates.description || undefined,
             dueDate: this.parseDate(updates.dueDate),
           } as UpdateTodoReqDto),
+      }),
+      deleteTask: tool({
+        description:
+          'Delete a task owned by the current user. Use only when the user explicitly asks to delete/remove a task and the taskId is known.',
+        inputSchema: z.object({
+          taskId: z.string().uuid(),
+        }),
+        execute: async ({ taskId }) => {
+          await this.deleteTodoUseCase.execute(taskId as Uuid, context.userId);
+          return { id: taskId, deleted: true };
+        },
+      }),
+      linkJiraIssue: tool({
+        description:
+          'Link or unlink a task with a Jira issue key. Provide jiraIssueKey to link, or null/empty string to unlink.',
+        inputSchema: z.object({
+          taskId: z.string().uuid(),
+          jiraIssueKey: nullableString.describe(
+            'Jira issue key, e.g. PROJ-123. Use null or empty string to unlink.',
+          ),
+        }),
+        execute: async ({ taskId, jiraIssueKey }) => {
+          const todo = await this.linkJiraIssueUseCase.execute(
+            taskId as Uuid,
+            context.userId,
+            {
+              jiraIssueKey,
+            } as LinkJiraIssueReqDto,
+          );
+
+          return toToolTodo(todo, true);
+        },
       }),
       updateTaskStatus: tool({
         description:

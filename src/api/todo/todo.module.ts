@@ -62,6 +62,7 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
     GetTodoDetailUseCase,
     CreateTodoUseCase,
     UpdateTodoUseCase,
+    LinkJiraIssueUseCase,
     DeleteTodoUseCase,
     FindAgentTodosUseCase,
     FindTodoStatusesUseCase,

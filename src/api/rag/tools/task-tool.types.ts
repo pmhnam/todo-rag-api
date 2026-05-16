@@ -33,6 +33,9 @@ export type ToolTodo = {
   statusName?: string;
   priority?: string;
   dueDate?: Date;
+  jiraIssueKey?: string;
+  jiraIssueUrl?: string;
+  jiraSyncStatus?: string;
   tags?: string[];
   externalLinks?: unknown;
   aiSummary?: string;
