@@ -3,7 +3,7 @@ import { Uuid } from '@/common/types/common.type';
 import { paginate } from '@/utils/offset-pagination';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ListTodoReqDto } from '../dto/list-todo.req.dto';
 import { TodoEntity } from '../entities/todo.entity';
 import { TodoPriority } from '../enums/todo-priority.enum';
@@ -49,7 +49,7 @@ export class TodoRepository {
       query.andWhere('todo.title ILIKE :q', { q: `%${reqDto.q}%` });
     }
 
-    query.orderBy('todo.createdAt', 'DESC');
+    query.orderBy('todo.position', 'ASC').addOrderBy('todo.createdAt', 'ASC');
 
     return paginate<TodoEntity>(query, reqDto, {
       skipCount: false,
@@ -115,6 +115,27 @@ export class TodoRepository {
 
   save(todo: TodoEntity): Promise<TodoEntity> {
     return this.repository.save(todo);
+  }
+
+  findOwnedByIds(ids: Uuid[], userId: Uuid): Promise<TodoEntity[]> {
+    if (ids.length === 0) return Promise.resolve([]);
+    return this.repository.find({ where: { id: In(ids), userId } });
+  }
+
+  async getNextPosition(userId: Uuid, projectId: Uuid, statusId: Uuid) {
+    const result = await this.repository
+      .createQueryBuilder('todo')
+      .select('COALESCE(MAX(todo.position), -1)', 'maxPosition')
+      .where('todo.user_id = :userId', { userId })
+      .andWhere('todo.project_id = :projectId', { projectId })
+      .andWhere('todo.status_id = :statusId', { statusId })
+      .getRawOne<{ maxPosition: string }>();
+
+    return Number(result?.maxPosition ?? -1) + 1;
+  }
+
+  async saveMany(todos: TodoEntity[]): Promise<TodoEntity[]> {
+    return this.repository.save(todos);
   }
 
   async softDelete(id: Uuid): Promise<void> {

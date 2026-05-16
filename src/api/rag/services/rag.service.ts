@@ -1,5 +1,6 @@
 import { Uuid } from '@/common/types/common.type';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ToolConfirmationDto } from '../dto/chat.req.dto';
 import { RagConversationEntity } from '../entities/rag-conversation.entity';
 import { RagMessageEntity } from '../entities/rag-message.entity';
 import { RagConversationRepository } from '../repositories/rag-conversation.repository';
@@ -27,12 +28,39 @@ export class RagService {
     userMessage: string,
     topK: number = 5,
     projectId?: Uuid,
+    confirmation?: ToolConfirmationDto,
   ): Promise<{
     response: string;
     contextChunks: RagContextChunk[];
     toolCalls?: TaskAgentToolCall[];
+    pendingConfirmation?: {
+      toolName: string;
+      input: unknown;
+      message: string;
+    };
   }> {
     const conversation = await this.getConversation(conversationId, userId);
+    if (confirmation) {
+      const agentResponse = await this.taskAgentService.confirmTool({
+        userId,
+        toolName: confirmation.approvedToolName,
+        input: confirmation.approvedInput,
+      });
+
+      await this.saveMessagePair(
+        conversationId,
+        userMessage,
+        agentResponse.text,
+        [],
+      );
+
+      return {
+        response: agentResponse.text,
+        contextChunks: [],
+        toolCalls: agentResponse.toolCalls,
+      };
+    }
+
     const searchResults = await this.searchService.search(
       userId,
       userMessage,
@@ -60,21 +88,11 @@ export class RagService {
       ragContext: context,
     });
 
-    await this.messageRepository.save(
-      this.messageRepository.create({
-        conversationId,
-        role: 'user',
-        content: userMessage,
-        contextChunks,
-      }),
-    );
-
-    await this.messageRepository.save(
-      this.messageRepository.create({
-        conversationId,
-        role: 'assistant',
-        content: agentResponse.text,
-      }),
+    await this.saveMessagePair(
+      conversationId,
+      userMessage,
+      agentResponse.text,
+      contextChunks,
     );
 
     if (previousMessages.length === 0 && !conversation.title) {
@@ -87,6 +105,7 @@ export class RagService {
       response: agentResponse.text,
       contextChunks,
       toolCalls: agentResponse.toolCalls,
+      pendingConfirmation: agentResponse.pendingConfirmation,
     };
   }
 
@@ -138,5 +157,29 @@ export class RagService {
   async deleteConversation(conversationId: Uuid, userId: Uuid): Promise<void> {
     const conversation = await this.getConversation(conversationId, userId);
     await this.conversationRepository.remove(conversation);
+  }
+
+  private async saveMessagePair(
+    conversationId: Uuid,
+    userMessage: string,
+    assistantMessage: string,
+    contextChunks: RagContextChunk[],
+  ): Promise<void> {
+    await this.messageRepository.save(
+      this.messageRepository.create({
+        conversationId,
+        role: 'user',
+        content: userMessage,
+        contextChunks,
+      }),
+    );
+
+    await this.messageRepository.save(
+      this.messageRepository.create({
+        conversationId,
+        role: 'assistant',
+        content: assistantMessage,
+      }),
+    );
   }
 }

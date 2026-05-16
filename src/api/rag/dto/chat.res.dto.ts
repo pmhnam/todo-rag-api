@@ -36,4 +36,14 @@ export class ChatResDto {
     input: unknown;
     output?: unknown;
   }>;
+
+  @ApiProperty({
+    description: 'Destructive tool call waiting for user confirmation',
+    required: false,
+  })
+  pendingConfirmation?: {
+    toolName: string;
+    input: unknown;
+    message: string;
+  };
 }

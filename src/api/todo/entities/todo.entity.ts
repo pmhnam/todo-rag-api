@@ -51,6 +51,9 @@ export class TodoEntity extends AbstractEntity {
   })
   priority!: TodoPriority;
 
+  @Column({ name: 'position', type: 'int', default: 0 })
+  position!: number;
+
   @Column({ name: 'due_date', type: 'date', nullable: true })
   dueDate?: Date;
 

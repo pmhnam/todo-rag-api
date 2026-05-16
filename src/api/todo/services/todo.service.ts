@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateTodoReqDto } from '../dto/create-todo.req.dto';
 import { LinkJiraIssueReqDto } from '../dto/link-jira-issue.req.dto';
 import { ListTodoReqDto } from '../dto/list-todo.req.dto';
+import { ReorderTodosReqDto } from '../dto/reorder-todos.req.dto';
 import { TodoResDto } from '../dto/todo.res.dto';
 import { UpdateTodoReqDto } from '../dto/update-todo.req.dto';
 import { CreateTodoUseCase } from '../use-cases/create-todo.use-case';
@@ -11,6 +12,7 @@ import { DeleteTodoUseCase } from '../use-cases/delete-todo.use-case';
 import { FindTodosUseCase } from '../use-cases/find-todos.use-case';
 import { GetTodoDetailUseCase } from '../use-cases/get-todo-detail.use-case';
 import { LinkJiraIssueUseCase } from '../use-cases/link-jira-issue.use-case';
+import { ReorderTodosUseCase } from '../use-cases/reorder-todos.use-case';
 import { UpdateTodoUseCase } from '../use-cases/update-todo.use-case';
 
 @Injectable()
@@ -22,6 +24,7 @@ export class TodoService {
     private readonly updateTodoUseCase: UpdateTodoUseCase,
     private readonly linkJiraIssueUseCase: LinkJiraIssueUseCase,
     private readonly deleteTodoUseCase: DeleteTodoUseCase,
+    private readonly reorderTodosUseCase: ReorderTodosUseCase,
   ) {}
 
   findMany(
@@ -57,5 +60,9 @@ export class TodoService {
 
   delete(id: Uuid, userId: Uuid): Promise<void> {
     return this.deleteTodoUseCase.execute(id, userId);
+  }
+
+  reorder(userId: Uuid, reqDto: ReorderTodosReqDto): Promise<void> {
+    return this.reorderTodosUseCase.execute(userId, reqDto);
   }
 }

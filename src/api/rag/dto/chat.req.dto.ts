@@ -1,5 +1,23 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import {
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
+
+export class ToolConfirmationDto {
+  @ApiProperty({ description: 'Approved tool name' })
+  @IsString()
+  approvedToolName: string;
+
+  @ApiProperty({ description: 'Approved tool input' })
+  @IsObject()
+  approvedInput: Record<string, unknown>;
+}
 
 export class ChatReqDto {
   @ApiProperty({
@@ -27,4 +45,13 @@ export class ChatReqDto {
   @IsOptional()
   @IsUUID()
   projectId?: string;
+
+  @ApiProperty({
+    description: 'Tool confirmation payload for destructive AI actions',
+    required: false,
+    type: ToolConfirmationDto,
+  })
+  @IsOptional()
+  @IsObject()
+  confirmation?: ToolConfirmationDto;
 }

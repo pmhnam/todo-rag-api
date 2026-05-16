@@ -119,10 +119,8 @@ export class TaskToolFactory {
         inputSchema: z.object({
           projectId: z.string().uuid(),
         }),
-        execute: async ({ projectId }) => {
-          await this.projectService.delete(projectId as Uuid, context.userId);
-          return { id: projectId, deleted: true };
-        },
+        execute: async (input) =>
+          this.requireConfirmation('deleteProject', input),
       }),
       listTaskStatuses: tool({
         description:
@@ -201,13 +199,8 @@ export class TaskToolFactory {
         inputSchema: z.object({
           statusId: z.string().uuid(),
         }),
-        execute: async ({ statusId }) => {
-          await this.deleteTodoStatusUseCase.execute(
-            statusId as Uuid,
-            context.userId,
-          );
-          return { id: statusId, deleted: true };
-        },
+        execute: async (input) =>
+          this.requireConfirmation('deleteTaskStatus', input),
       }),
       findTasks: tool({
         description:
@@ -306,10 +299,7 @@ export class TaskToolFactory {
         inputSchema: z.object({
           taskId: z.string().uuid(),
         }),
-        execute: async ({ taskId }) => {
-          await this.deleteTodoUseCase.execute(taskId as Uuid, context.userId);
-          return { id: taskId, deleted: true };
-        },
+        execute: async (input) => this.requireConfirmation('deleteTask', input),
       }),
       linkJiraIssue: tool({
         description:
@@ -363,6 +353,41 @@ export class TaskToolFactory {
     };
   }
 
+  async executeConfirmedTool(
+    toolName: string,
+    input: unknown,
+    context: TaskToolContext,
+  ): Promise<unknown> {
+    switch (toolName) {
+      case 'deleteProject': {
+        const parsed = z.object({ projectId: z.string().uuid() }).parse(input);
+        await this.projectService.delete(
+          parsed.projectId as Uuid,
+          context.userId,
+        );
+        return { id: parsed.projectId, deleted: true };
+      }
+      case 'deleteTaskStatus': {
+        const parsed = z.object({ statusId: z.string().uuid() }).parse(input);
+        await this.deleteTodoStatusUseCase.execute(
+          parsed.statusId as Uuid,
+          context.userId,
+        );
+        return { id: parsed.statusId, deleted: true };
+      }
+      case 'deleteTask': {
+        const parsed = z.object({ taskId: z.string().uuid() }).parse(input);
+        await this.deleteTodoUseCase.execute(
+          parsed.taskId as Uuid,
+          context.userId,
+        );
+        return { id: parsed.taskId, deleted: true };
+      }
+      default:
+        throw new Error(`Tool ${toolName} does not support confirmation`);
+    }
+  }
+
   private async resolveStatusId(
     userId: Uuid,
     input: { projectId: Uuid; statusId?: Uuid; statusName?: string },
@@ -389,5 +414,27 @@ export class TaskToolFactory {
       throw new Error(`Ngày không hợp lệ: ${value}`);
     }
     return date;
+  }
+
+  private requireConfirmation(toolName: string, input: unknown) {
+    return {
+      requiresConfirmation: true,
+      toolName,
+      input,
+      message: this.buildConfirmationMessage(toolName),
+    };
+  }
+
+  private buildConfirmationMessage(toolName: string): string {
+    switch (toolName) {
+      case 'deleteTask':
+        return 'AI muốn xoá task này. Vui lòng xác nhận trước khi thực hiện.';
+      case 'deleteProject':
+        return 'AI muốn xoá project này. Vui lòng xác nhận trước khi thực hiện.';
+      case 'deleteTaskStatus':
+        return 'AI muốn xoá column/status này. Vui lòng xác nhận trước khi thực hiện.';
+      default:
+        return 'Thao tác này cần xác nhận trước khi thực hiện.';
+    }
   }
 }

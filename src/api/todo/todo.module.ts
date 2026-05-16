@@ -23,6 +23,7 @@ import { FindTodosUseCase } from './use-cases/find-todos.use-case';
 import { GetTodoDetailUseCase } from './use-cases/get-todo-detail.use-case';
 import { GetTodoStatusDetailUseCase } from './use-cases/get-todo-status-detail.use-case';
 import { LinkJiraIssueUseCase } from './use-cases/link-jira-issue.use-case';
+import { ReorderTodosUseCase } from './use-cases/reorder-todos.use-case';
 import { ResolveTodoStatusUseCase } from './use-cases/resolve-todo-status.use-case';
 import { UpdateTodoStatusUseCase } from './use-cases/update-todo-status.use-case';
 import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
@@ -54,6 +55,7 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
     CreateTodoStatusUseCase,
     UpdateTodoStatusUseCase,
     DeleteTodoStatusUseCase,
+    ReorderTodosUseCase,
     ResolveTodoStatusUseCase,
   ],
   exports: [
@@ -69,6 +71,7 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
     CreateTodoStatusUseCase,
     UpdateTodoStatusUseCase,
     DeleteTodoStatusUseCase,
+    ReorderTodosUseCase,
     ResolveTodoStatusUseCase,
   ],
 })

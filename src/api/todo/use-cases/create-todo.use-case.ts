@@ -48,6 +48,13 @@ export class CreateTodoUseCase {
       statusId: data.statusId as Uuid,
       projectId: data.projectId as Uuid,
       priority: data.priority || TodoPriority.MEDIUM,
+      position:
+        data.position ??
+        (await this.todoRepository.getNextPosition(
+          userId,
+          data.projectId as Uuid,
+          data.statusId as Uuid,
+        )),
       userId,
       createdBy: userId,
       updatedBy: userId,

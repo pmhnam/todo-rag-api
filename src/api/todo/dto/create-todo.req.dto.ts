@@ -3,6 +3,7 @@ import {
   ClassFieldOptional,
   DateFieldOptional,
   EnumFieldOptional,
+  NumberFieldOptional,
   StringField,
   StringFieldOptional,
   URLField,
@@ -36,6 +37,9 @@ export class CreateTodoReqDto {
     enumName: 'TodoPriority',
   })
   readonly priority?: TodoPriority = TodoPriority.MEDIUM;
+
+  @NumberFieldOptional({ int: true, min: 0 })
+  readonly position?: number;
 
   @DateFieldOptional({ description: 'Due date (YYYY-MM-DD)' })
   readonly dueDate?: Date;

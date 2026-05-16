@@ -5,6 +5,7 @@ import {
   DateField,
   DateFieldOptional,
   EnumField,
+  NumberField,
   StringField,
   StringFieldOptional,
   UUIDField,
@@ -44,6 +45,10 @@ export class TodoResDto {
   @EnumField(() => TodoPriority, { enumName: 'TodoPriority' })
   @Expose()
   priority: TodoPriority;
+
+  @NumberField({ int: true })
+  @Expose()
+  position: number;
 
   @DateFieldOptional()
   @Expose()

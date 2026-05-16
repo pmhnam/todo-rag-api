@@ -19,6 +19,7 @@ import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { CreateTodoReqDto } from '../dto/create-todo.req.dto';
 import { LinkJiraIssueReqDto } from '../dto/link-jira-issue.req.dto';
 import { ListTodoReqDto } from '../dto/list-todo.req.dto';
+import { ReorderTodosReqDto } from '../dto/reorder-todos.req.dto';
 import { TodoResDto } from '../dto/todo.res.dto';
 import { UpdateTodoReqDto } from '../dto/update-todo.req.dto';
 import { TodoService } from '../services/todo.service';
@@ -70,6 +71,17 @@ export class TodoController {
     @Body() reqDto: CreateTodoReqDto,
   ): Promise<TodoResDto> {
     return this.todoService.create(userId, reqDto);
+  }
+
+  @Patch('reorder')
+  @ApiAuth({
+    summary: 'Persist todo ordering for one or more columns',
+  })
+  async reorder(
+    @CurrentUser('id') userId: Uuid,
+    @Body() reqDto: ReorderTodosReqDto,
+  ): Promise<void> {
+    return this.todoService.reorder(userId, reqDto);
   }
 
   @Patch(':id')

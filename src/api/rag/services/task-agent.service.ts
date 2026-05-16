@@ -11,9 +11,16 @@ export type TaskAgentToolCall = {
   output?: unknown;
 };
 
+export type TaskAgentPendingConfirmation = {
+  toolName: string;
+  input: unknown;
+  message: string;
+};
+
 export type TaskAgentResponse = {
   text: string;
   toolCalls: TaskAgentToolCall[];
+  pendingConfirmation?: TaskAgentPendingConfirmation;
 };
 
 @Injectable()
@@ -41,11 +48,44 @@ export class TaskAgentService {
       userId: params.userId,
     });
 
-    return this.aiSdkService.generateWithTools({
+    const response = await this.aiSdkService.generateWithTools({
       system: this.buildSystemPrompt(params.projectId, params.ragContext),
       messages: this.buildMessages(params.previousMessages, params.userMessage),
       tools,
     });
+
+    const pendingConfirmation = this.findPendingConfirmation(
+      response.toolCalls,
+    );
+
+    return {
+      ...response,
+      text: pendingConfirmation?.message || response.text,
+      pendingConfirmation,
+    };
+  }
+
+  async confirmTool(params: {
+    userId: Uuid;
+    toolName: string;
+    input: unknown;
+  }): Promise<TaskAgentResponse> {
+    const output = await this.taskToolFactory.executeConfirmedTool(
+      params.toolName,
+      params.input,
+      { userId: params.userId },
+    );
+
+    return {
+      text: this.buildConfirmationText(params.toolName),
+      toolCalls: [
+        {
+          toolName: params.toolName,
+          input: params.input,
+          output,
+        },
+      ],
+    };
   }
 
   private buildMessages(
@@ -84,5 +124,37 @@ Project hiện tại: ${projectId || 'chưa được chọn'}.
 
 Ngữ cảnh RAG tham khảo:
 ${ragContext || 'Không có ngữ cảnh bổ sung.'}`;
+  }
+
+  private findPendingConfirmation(
+    toolCalls: TaskAgentToolCall[],
+  ): TaskAgentPendingConfirmation | undefined {
+    for (const call of toolCalls) {
+      const output = call.output as
+        | { requiresConfirmation?: boolean; message?: string }
+        | undefined;
+      if (output?.requiresConfirmation) {
+        return {
+          toolName: call.toolName,
+          input: call.input,
+          message:
+            output.message ||
+            `Cần xác nhận trước khi thực hiện ${call.toolName}.`,
+        };
+      }
+    }
+  }
+
+  private buildConfirmationText(toolName: string): string {
+    switch (toolName) {
+      case 'deleteTask':
+        return 'Đã xoá task theo xác nhận của bạn.';
+      case 'deleteProject':
+        return 'Đã xoá project theo xác nhận của bạn.';
+      case 'deleteTaskStatus':
+        return 'Đã xoá column/status theo xác nhận của bạn.';
+      default:
+        return 'Đã thực hiện thao tác theo xác nhận của bạn.';
+    }
   }
 }
