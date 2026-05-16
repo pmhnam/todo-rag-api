@@ -2,15 +2,19 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JiraIntegrationModule } from '../jira-integration/jira-integration.module';
 import { RagCoreModule } from '../rag/rag-core.module';
+import { TodoActivityController } from './controllers/todo-activity.controller';
 import { TodoCommentController } from './controllers/todo-comment.controller';
 import { TodoStatusController } from './controllers/todo-status.controller';
 import { TodoController } from './controllers/todo.controller';
+import { TodoActivityEntity } from './entities/todo-activity.entity';
 import { TodoCommentEntity } from './entities/todo-comment.entity';
 import { TodoStatusEntity } from './entities/todo-status.entity';
 import { TodoEntity } from './entities/todo.entity';
+import { TodoActivityRepository } from './repositories/todo-activity.repository';
 import { TodoCommentRepository } from './repositories/todo-comment.repository';
 import { TodoStatusRepository } from './repositories/todo-status.repository';
 import { TodoRepository } from './repositories/todo.repository';
+import { TodoActivityService } from './services/todo-activity.service';
 import { TodoAiSummaryService } from './services/todo-ai-summary.service';
 import { TodoIndexingService } from './services/todo-indexing.service';
 import { TodoJiraSyncService } from './services/todo-jira-sync.service';
@@ -23,6 +27,7 @@ import { DeleteTodoCommentUseCase } from './use-cases/delete-todo-comment.use-ca
 import { DeleteTodoStatusUseCase } from './use-cases/delete-todo-status.use-case';
 import { DeleteTodoUseCase } from './use-cases/delete-todo.use-case';
 import { FindAgentTodosUseCase } from './use-cases/find-agent-todos.use-case';
+import { FindTodoActivitiesUseCase } from './use-cases/find-todo-activities.use-case';
 import { FindTodoCommentsUseCase } from './use-cases/find-todo-comments.use-case';
 import { FindTodoStatusesUseCase } from './use-cases/find-todo-statuses.use-case';
 import { FindTodosUseCase } from './use-cases/find-todos.use-case';
@@ -37,17 +42,29 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TodoEntity, TodoStatusEntity, TodoCommentEntity]),
+    TypeOrmModule.forFeature([
+      TodoEntity,
+      TodoStatusEntity,
+      TodoCommentEntity,
+      TodoActivityEntity,
+    ]),
     RagCoreModule,
     JiraIntegrationModule,
   ],
-  controllers: [TodoController, TodoStatusController, TodoCommentController],
+  controllers: [
+    TodoController,
+    TodoStatusController,
+    TodoCommentController,
+    TodoActivityController,
+  ],
   providers: [
     TodoService,
     TodoStatusService,
     TodoRepository,
     TodoStatusRepository,
     TodoCommentRepository,
+    TodoActivityRepository,
+    TodoActivityService,
     TodoAiSummaryService,
     TodoIndexingService,
     TodoJiraSyncService,
@@ -69,6 +86,7 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
     CreateTodoCommentUseCase,
     UpdateTodoCommentUseCase,
     DeleteTodoCommentUseCase,
+    FindTodoActivitiesUseCase,
   ],
   exports: [
     TodoStatusService,

@@ -5,7 +5,9 @@ import { plainToInstance } from 'class-transformer';
 import { LinkJiraIssueReqDto } from '../dto/link-jira-issue.req.dto';
 import { TodoResDto } from '../dto/todo.res.dto';
 import { JiraSyncStatus } from '../enums/jira-sync-status.enum';
+import { TodoActivityType } from '../enums/todo-activity-type.enum';
 import { TodoRepository } from '../repositories/todo.repository';
+import { TodoActivityService } from '../services/todo-activity.service';
 import { TodoJiraSyncService } from '../services/todo-jira-sync.service';
 
 @Injectable()
@@ -13,6 +15,7 @@ export class LinkJiraIssueUseCase {
   constructor(
     private readonly todoRepository: TodoRepository,
     private readonly todoJiraSyncService: TodoJiraSyncService,
+    private readonly todoActivityService: TodoActivityService,
   ) {}
 
   async execute(
@@ -29,13 +32,22 @@ export class LinkJiraIssueUseCase {
     const jiraIssueKey = reqDto.jiraIssueKey?.trim().toUpperCase() || null;
 
     if (!jiraIssueKey) {
+      const previousIssueKey = todo.jiraIssueKey;
       todo.jiraIssueKey = null;
       todo.jiraIssueUrl = null;
       todo.jiraSyncStatus = JiraSyncStatus.NOT_LINKED;
       todo.jiraLastSyncedAt = null;
       todo.updatedBy = userId;
 
-      return plainToInstance(TodoResDto, await this.todoRepository.save(todo));
+      const saved = await this.todoRepository.save(todo);
+      this.todoActivityService.record({
+        todoId: saved.id,
+        userId,
+        type: TodoActivityType.JIRA_UNLINKED,
+        message: `Unlinked Jira issue${previousIssueKey ? ` ${previousIssueKey}` : ''}`,
+        metadata: { previousIssueKey },
+      });
+      return plainToInstance(TodoResDto, saved);
     }
 
     todo.jiraIssueKey = jiraIssueKey;
@@ -51,6 +63,14 @@ export class LinkJiraIssueUseCase {
       : JiraSyncStatus.NOT_LINKED;
     todo.updatedBy = userId;
 
-    return plainToInstance(TodoResDto, await this.todoRepository.save(todo));
+    const saved = await this.todoRepository.save(todo);
+    this.todoActivityService.record({
+      todoId: saved.id,
+      userId,
+      type: TodoActivityType.JIRA_LINKED,
+      message: `Linked Jira issue ${jiraIssueKey}`,
+      metadata: { jiraIssueKey, jiraIssueUrl: saved.jiraIssueUrl },
+    });
+    return plainToInstance(TodoResDto, saved);
   }
 }

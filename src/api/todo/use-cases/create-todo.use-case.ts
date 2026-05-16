@@ -5,9 +5,11 @@ import { Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { CreateTodoReqDto } from '../dto/create-todo.req.dto';
 import { TodoResDto } from '../dto/todo.res.dto';
+import { TodoActivityType } from '../enums/todo-activity-type.enum';
 import { TodoPriority } from '../enums/todo-priority.enum';
 import { TodoStatusRepository } from '../repositories/todo-status.repository';
 import { TodoRepository } from '../repositories/todo.repository';
+import { TodoActivityService } from '../services/todo-activity.service';
 import { TodoAiSummaryService } from '../services/todo-ai-summary.service';
 import { TodoIndexingService } from '../services/todo-indexing.service';
 
@@ -18,6 +20,7 @@ export class CreateTodoUseCase {
     private readonly todoStatusRepository: TodoStatusRepository,
     private readonly todoAiSummaryService: TodoAiSummaryService,
     private readonly todoIndexingService: TodoIndexingService,
+    private readonly todoActivityService: TodoActivityService,
   ) {}
 
   async execute(userId: Uuid, reqDto: CreateTodoReqDto): Promise<TodoResDto> {
@@ -62,6 +65,13 @@ export class CreateTodoUseCase {
 
     const saved = await this.todoRepository.save(todo);
     saved.status = status;
+    this.todoActivityService.record({
+      todoId: saved.id,
+      userId,
+      type: TodoActivityType.TASK_CREATED,
+      message: `Created task "${saved.title}"`,
+      metadata: { status: status.name, priority: saved.priority },
+    });
     this.todoIndexingService.reindexAsync(userId, saved);
 
     return plainToInstance(TodoResDto, saved);
