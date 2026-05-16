@@ -2,10 +2,13 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JiraIntegrationModule } from '../jira-integration/jira-integration.module';
 import { RagCoreModule } from '../rag/rag-core.module';
+import { TodoCommentController } from './controllers/todo-comment.controller';
 import { TodoStatusController } from './controllers/todo-status.controller';
 import { TodoController } from './controllers/todo.controller';
+import { TodoCommentEntity } from './entities/todo-comment.entity';
 import { TodoStatusEntity } from './entities/todo-status.entity';
 import { TodoEntity } from './entities/todo.entity';
+import { TodoCommentRepository } from './repositories/todo-comment.repository';
 import { TodoStatusRepository } from './repositories/todo-status.repository';
 import { TodoRepository } from './repositories/todo.repository';
 import { TodoAiSummaryService } from './services/todo-ai-summary.service';
@@ -13,11 +16,14 @@ import { TodoIndexingService } from './services/todo-indexing.service';
 import { TodoJiraSyncService } from './services/todo-jira-sync.service';
 import { TodoStatusService } from './services/todo-status.service';
 import { TodoService } from './services/todo.service';
+import { CreateTodoCommentUseCase } from './use-cases/create-todo-comment.use-case';
 import { CreateTodoStatusUseCase } from './use-cases/create-todo-status.use-case';
 import { CreateTodoUseCase } from './use-cases/create-todo.use-case';
+import { DeleteTodoCommentUseCase } from './use-cases/delete-todo-comment.use-case';
 import { DeleteTodoStatusUseCase } from './use-cases/delete-todo-status.use-case';
 import { DeleteTodoUseCase } from './use-cases/delete-todo.use-case';
 import { FindAgentTodosUseCase } from './use-cases/find-agent-todos.use-case';
+import { FindTodoCommentsUseCase } from './use-cases/find-todo-comments.use-case';
 import { FindTodoStatusesUseCase } from './use-cases/find-todo-statuses.use-case';
 import { FindTodosUseCase } from './use-cases/find-todos.use-case';
 import { GetTodoDetailUseCase } from './use-cases/get-todo-detail.use-case';
@@ -25,21 +31,23 @@ import { GetTodoStatusDetailUseCase } from './use-cases/get-todo-status-detail.u
 import { LinkJiraIssueUseCase } from './use-cases/link-jira-issue.use-case';
 import { ReorderTodosUseCase } from './use-cases/reorder-todos.use-case';
 import { ResolveTodoStatusUseCase } from './use-cases/resolve-todo-status.use-case';
+import { UpdateTodoCommentUseCase } from './use-cases/update-todo-comment.use-case';
 import { UpdateTodoStatusUseCase } from './use-cases/update-todo-status.use-case';
 import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TodoEntity, TodoStatusEntity]),
+    TypeOrmModule.forFeature([TodoEntity, TodoStatusEntity, TodoCommentEntity]),
     RagCoreModule,
     JiraIntegrationModule,
   ],
-  controllers: [TodoController, TodoStatusController],
+  controllers: [TodoController, TodoStatusController, TodoCommentController],
   providers: [
     TodoService,
     TodoStatusService,
     TodoRepository,
     TodoStatusRepository,
+    TodoCommentRepository,
     TodoAiSummaryService,
     TodoIndexingService,
     TodoJiraSyncService,
@@ -57,6 +65,10 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
     DeleteTodoStatusUseCase,
     ReorderTodosUseCase,
     ResolveTodoStatusUseCase,
+    FindTodoCommentsUseCase,
+    CreateTodoCommentUseCase,
+    UpdateTodoCommentUseCase,
+    DeleteTodoCommentUseCase,
   ],
   exports: [
     TodoStatusService,
