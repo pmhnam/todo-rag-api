@@ -9,6 +9,10 @@ import { RagContextChunk } from '../types/rag.types';
 import { RagPromptBuilderService } from './rag-prompt-builder.service';
 import { SearchService } from './search.service';
 import { TaskAgentService, TaskAgentToolCall } from './task-agent.service';
+import { TaskIntentClassifierService } from './task-intent-classifier.service';
+
+const OUT_OF_SCOPE_RESPONSE =
+  'Xin lỗi, tôi chỉ có thể hỗ trợ các tác vụ liên quan đến Todo trong hệ thống này.';
 
 @Injectable()
 export class RagService {
@@ -20,6 +24,7 @@ export class RagService {
     private readonly searchService: SearchService,
     private readonly ragPromptBuilderService: RagPromptBuilderService,
     private readonly taskAgentService: TaskAgentService,
+    private readonly taskIntentClassifierService: TaskIntentClassifierService,
   ) {}
 
   async query(
@@ -58,6 +63,22 @@ export class RagService {
         response: agentResponse.text,
         contextChunks: [],
         toolCalls: agentResponse.toolCalls,
+      };
+    }
+
+    const intent = this.taskIntentClassifierService.classify(userMessage);
+    if (intent === 'OUT_OF_SCOPE') {
+      await this.saveMessagePair(
+        conversationId,
+        userMessage,
+        OUT_OF_SCOPE_RESPONSE,
+        [],
+      );
+
+      return {
+        response: OUT_OF_SCOPE_RESPONSE,
+        contextChunks: [],
+        toolCalls: [],
       };
     }
 

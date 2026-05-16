@@ -18,6 +18,7 @@ import { RagPromptBuilderService } from './services/rag-prompt-builder.service';
 import { RagService } from './services/rag.service';
 import { SearchService } from './services/search.service';
 import { TaskAgentService } from './services/task-agent.service';
+import { TaskIntentClassifierService } from './services/task-intent-classifier.service';
 import { TaskToolFactory } from './tools/task-tool.factory';
 
 @Module({
@@ -40,6 +41,7 @@ import { TaskToolFactory } from './tools/task-tool.factory';
     RagService,
     TaskAgentService,
     RagPromptBuilderService,
+    TaskIntentClassifierService,
     AiSdkService,
     TaskToolFactory,
     RagConversationRepository,
