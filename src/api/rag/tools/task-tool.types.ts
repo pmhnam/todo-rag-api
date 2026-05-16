@@ -6,6 +6,24 @@ export type TaskToolContext = {
   userId: Uuid;
 };
 
+export type ToolProject = {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+export type ToolTodoStatus = {
+  id: string;
+  projectId: string;
+  name: string;
+  order: number;
+  color?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
 export type ToolTodo = {
   id: string;
   projectId: string;

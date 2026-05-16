@@ -63,6 +63,7 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
     CreateTodoUseCase,
     UpdateTodoUseCase,
     FindAgentTodosUseCase,
+    FindTodoStatusesUseCase,
     ResolveTodoStatusUseCase,
   ],
 })

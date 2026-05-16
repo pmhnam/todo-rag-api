@@ -26,6 +26,10 @@ export class ProjectService {
       .where('project.userId = :userId', { userId })
       .orderBy('project.createdAt', reqDto.order);
 
+    if (reqDto.q) {
+      queryBuilder.andWhere('project.name ILIKE :q', { q: `%${reqDto.q}%` });
+    }
+
     const [entities, metaDto] = await paginate<ProjectEntity>(
       queryBuilder,
       reqDto,

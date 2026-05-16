@@ -1,4 +1,5 @@
 import { PostEntity } from '@/api/post/entities/post.entity';
+import { ProjectModule } from '@/api/project/project.module';
 import { TodoEntity } from '@/api/todo/entities/todo.entity';
 import { TodoModule } from '@/api/todo/todo.module';
 import { Module } from '@nestjs/common';
@@ -30,6 +31,7 @@ import { TaskToolFactory } from './tools/task-tool.factory';
     RagCoreModule,
     JiraIntegrationModule,
     TodoModule,
+    ProjectModule,
   ],
   controllers: [RagController, IndexingController],
   providers: [
