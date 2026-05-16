@@ -5,5 +5,27 @@
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
-  }
+  },
+  "moduleNameMapper": {
+    "^@/api(.*)$": "<rootDir>/../src/api$1",
+    "^@/background(.*)$": "<rootDir>/../src/background$1",
+    "^@/common(.*)$": "<rootDir>/../src/common$1",
+    "^@/config(.*)$": "<rootDir>/../src/config$1",
+    "^@/constants(.*)$": "<rootDir>/../src/constants$1",
+    "^@/database(.*)$": "<rootDir>/../src/database$1",
+    "^@/decorators(.*)$": "<rootDir>/../src/decorators$1",
+    "^@/exceptions(.*)$": "<rootDir>/../src/exceptions$1",
+    "^@/filters(.*)$": "<rootDir>/../src/filters$1",
+    "^@/generated(.*)$": "<rootDir>/../src/generated$1",
+    "^@/guards(.*)$": "<rootDir>/../src/guards$1",
+    "^@/interceptors(.*)$": "<rootDir>/../src/interceptors$1",
+    "^@/libs(.*)$": "<rootDir>/../src/libs$1",
+    "^@/mail(.*)$": "<rootDir>/../src/mail$1",
+    "^@/redis(.*)$": "<rootDir>/../src/redis$1",
+    "^@/shared(.*)$": "<rootDir>/../src/shared$1",
+    "^@/utils(.*)$": "<rootDir>/../src/utils$1"
+  },
+  "maxWorkers": 1,
+  "setupFiles": ["../setup-jest.mjs"],
+  "testTimeout": 120000
 }

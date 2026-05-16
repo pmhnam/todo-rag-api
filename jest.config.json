@@ -35,5 +35,6 @@
   },
   "setupFiles": ["../setup-jest.mjs"],
   "cacheDirectory": "../.jest-cache",
+  "maxWorkers": 2,
   "testTimeout": 120000
 }
