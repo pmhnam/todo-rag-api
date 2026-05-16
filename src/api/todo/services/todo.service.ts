@@ -34,6 +34,10 @@ export class TodoService {
     return this.findTodosUseCase.execute(userId, reqDto);
   }
 
+  findBoard(userId: Uuid, reqDto: ListTodoReqDto): Promise<TodoResDto[]> {
+    return this.findTodosUseCase.executeBoard(userId, reqDto);
+  }
+
   findOne(id: Uuid, userId: Uuid): Promise<TodoResDto> {
     return this.getTodoDetailUseCase.execute(id, userId);
   }

@@ -46,6 +46,19 @@ export class TodoController {
     return this.todoService.findMany(userId, reqDto);
   }
 
+  @Get('board')
+  @ApiAuth({
+    type: TodoResDto,
+    summary:
+      'Get board todos in one request, filterable by project/priority/jiraSyncStatus/search',
+  })
+  async findBoard(
+    @CurrentUser('id') userId: Uuid,
+    @Query() reqDto: ListTodoReqDto,
+  ): Promise<TodoResDto[]> {
+    return this.todoService.findBoard(userId, reqDto);
+  }
+
   @Get(':id')
   @ApiAuth({
     type: TodoResDto,

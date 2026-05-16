@@ -21,4 +21,12 @@ export class FindTodosUseCase {
 
     return new OffsetPaginatedDto(plainToInstance(TodoResDto, todos), metaDto);
   }
+
+  async executeBoard(
+    userId: Uuid,
+    reqDto: ListTodoReqDto,
+  ): Promise<TodoResDto[]> {
+    const todos = await this.todoRepository.findBoardTodosOwned(userId, reqDto);
+    return plainToInstance(TodoResDto, todos);
+  }
 }

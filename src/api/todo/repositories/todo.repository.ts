@@ -19,6 +19,25 @@ export class TodoRepository {
     userId: Uuid,
     reqDto: ListTodoReqDto,
   ): Promise<[TodoEntity[], OffsetPaginationDto]> {
+    const query = this.createOwnedProjectQuery(userId, reqDto);
+
+    query.orderBy('todo.position', 'ASC').addOrderBy('todo.createdAt', 'ASC');
+
+    return paginate<TodoEntity>(query, reqDto, {
+      skipCount: false,
+      takeAll: false,
+    });
+  }
+
+  findBoardTodosOwned(userId: Uuid, reqDto: ListTodoReqDto) {
+    return this.createOwnedProjectQuery(userId, reqDto)
+      .orderBy('status.order', 'ASC')
+      .addOrderBy('todo.position', 'ASC')
+      .addOrderBy('todo.createdAt', 'ASC')
+      .getMany();
+  }
+
+  private createOwnedProjectQuery(userId: Uuid, reqDto: ListTodoReqDto) {
     const query = this.repository
       .createQueryBuilder('todo')
       .leftJoinAndSelect('todo.status', 'status')
@@ -49,12 +68,7 @@ export class TodoRepository {
       query.andWhere('todo.title ILIKE :q', { q: `%${reqDto.q}%` });
     }
 
-    query.orderBy('todo.position', 'ASC').addOrderBy('todo.createdAt', 'ASC');
-
-    return paginate<TodoEntity>(query, reqDto, {
-      skipCount: false,
-      takeAll: false,
-    });
+    return query;
   }
 
   findOwnedById(id: Uuid, userId: Uuid): Promise<TodoEntity | null> {
