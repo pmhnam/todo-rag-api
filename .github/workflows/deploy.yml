@@ -25,4 +25,5 @@ jobs:
           cd "${{ secrets.SERVER_PATH }}"
           git pull origin main
           docker compose up -d --build todo-rag-api
+          docker compose up -d --build migrate
           EOF
