@@ -30,6 +30,7 @@
     "migration:prod:show": "node ./node_modules/typeorm/cli.js migration:show -d dist/database/data-source.js",
     "migration:create": "typeorm migration:create",
     "migration:generate": "pnpm typeorm migration:generate --pretty",
+    "intent:seed": "env-cmd ts-node -r tsconfig-paths/register src/scripts/seed-ai-intents.ts",
     "db:create": "env-cmd ts-node ./node_modules/typeorm-extension/bin/cli.cjs db:create",
     "db:drop": "env-cmd ts-node ./node_modules/typeorm-extension/bin/cli.cjs db:drop",
     "seed:run": "env-cmd ts-node ./node_modules/typeorm-extension/bin/cli.cjs seed:run",

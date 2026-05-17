@@ -1,0 +1,86 @@
+import { AiIntent } from '../enums/ai-intent.enum';
+
+export const INTENT_EXAMPLES: Record<
+  Exclude<AiIntent, AiIntent.AMBIGUOUS>,
+  string[]
+> = {
+  [AiIntent.TASK_CREATE]: [
+    'tạo task mới',
+    'thêm todo mua sữa',
+    'nhắc tôi họp lúc 9h',
+    'mai nhớ deploy backend',
+    'deadline sprint là thứ 6',
+    'đừng quên gọi khách hàng',
+    'cần follow up issue thanh toán',
+  ],
+  [AiIntent.TASK_UPDATE]: [
+    'đổi deadline task deploy sang ngày mai',
+    'cập nhật task login thành done',
+    'đổi priority task này lên high',
+    'assign task này cho Nam',
+    'chuyển task sang in progress',
+  ],
+  [AiIntent.TASK_DELETE]: [
+    'xóa task mua sữa',
+    'hủy task này',
+    'remove todo cũ',
+    'archive task đã xong',
+  ],
+  [AiIntent.TASK_SEARCH]: [
+    'task hôm nay có gì',
+    'việc nào quá hạn',
+    'tìm task backend',
+    'show task chưa hoàn thành',
+    'list task đang làm',
+  ],
+  [AiIntent.PROJECT_MANAGE]: [
+    'tạo project mới',
+    'đổi tên project backend',
+    'archive project cũ',
+    'project này có bao nhiêu task',
+  ],
+  [AiIntent.COMMENT_CREATE]: [
+    'comment vào task này',
+    'thêm ghi chú cho task deploy',
+    'note rằng task này cần review',
+    'bình luận task này là đang blocked',
+  ],
+  [AiIntent.COMMENT_SEARCH]: [
+    'xem comment của task này',
+    'task này có ghi chú gì',
+    'tìm comment liên quan đến bug auth',
+  ],
+  [AiIntent.TAG_MANAGE]: [
+    'gắn tag urgent cho task này',
+    'thêm label backend',
+    'remove tag bug',
+    'lọc task theo tag frontend',
+  ],
+  [AiIntent.STATUS_UPDATE]: [
+    'đổi task này sang done',
+    'mark task as completed',
+    'chuyển task sang doing',
+    'task này bị blocked',
+  ],
+  [AiIntent.DASHBOARD_QUERY]: [
+    'thống kê task tuần này',
+    'dashboard hôm nay thế nào',
+    'bao nhiêu task đã hoàn thành',
+    'tiến độ project backend',
+    'completion rate tháng này',
+  ],
+  [AiIntent.TODO_HELP]: [
+    'app này làm được gì',
+    'hướng dẫn dùng AI todo',
+    'tôi có thể hỏi gì',
+  ],
+  [AiIntent.OUT_OF_SCOPE]: [
+    'viết html landing page',
+    'tạo react component',
+    'dịch đoạn này sang tiếng anh',
+    'viết email xin nghỉ phép',
+    'giải bài toán này',
+    'giá bitcoin hôm nay',
+    'thời tiết hôm nay',
+  ],
+};

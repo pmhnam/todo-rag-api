@@ -123,6 +123,69 @@ export class TodoRepository {
     return query.getMany();
   }
 
+  async getDashboardStats(
+    userId: Uuid,
+    params: { projectId?: Uuid } = {},
+  ): Promise<{
+    total: number;
+    overdue: number;
+    dueToday: number;
+    byPriority: Record<string, number>;
+    byStatus: Array<{ statusId: Uuid; statusName: string; count: number }>;
+  }> {
+    const baseQuery = this.repository
+      .createQueryBuilder('todo')
+      .where('todo.user_id = :userId', { userId });
+
+    if (params.projectId) {
+      baseQuery.andWhere('todo.project_id = :projectId', {
+        projectId: params.projectId,
+      });
+    }
+
+    const total = await baseQuery.clone().getCount();
+    const overdue = await baseQuery
+      .clone()
+      .andWhere('todo.due_date < CURRENT_DATE')
+      .getCount();
+    const dueToday = await baseQuery
+      .clone()
+      .andWhere('todo.due_date = CURRENT_DATE')
+      .getCount();
+
+    const priorityRows = await baseQuery
+      .clone()
+      .select('todo.priority', 'priority')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('todo.priority')
+      .getRawMany<{ priority: string; count: string }>();
+
+    const statusRows = await baseQuery
+      .clone()
+      .leftJoin('todo.status', 'status')
+      .select('todo.status_id', 'statusId')
+      .addSelect('status.name', 'statusName')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('todo.status_id')
+      .addGroupBy('status.name')
+      .orderBy('status.name', 'ASC')
+      .getRawMany<{ statusId: Uuid; statusName: string; count: string }>();
+
+    return {
+      total,
+      overdue,
+      dueToday,
+      byPriority: Object.fromEntries(
+        priorityRows.map((row) => [row.priority, Number(row.count)]),
+      ),
+      byStatus: statusRows.map((row) => ({
+        statusId: row.statusId,
+        statusName: row.statusName,
+        count: Number(row.count),
+      })),
+    };
+  }
+
   create(data: Partial<TodoEntity>): TodoEntity {
     return this.repository.create(data);
   }

@@ -1,6 +1,7 @@
 import { CreateProjectReqDto } from '@/api/project/dto/create-project.req.dto';
 import { UpdateProjectReqDto } from '@/api/project/dto/update-project.req.dto';
 import { ProjectService } from '@/api/project/services/project.service';
+import { CreateTodoCommentReqDto } from '@/api/todo/dto/create-todo-comment.req.dto';
 import { CreateTodoStatusReqDto } from '@/api/todo/dto/create-todo-status.req.dto';
 import { CreateTodoReqDto } from '@/api/todo/dto/create-todo.req.dto';
 import { LinkJiraIssueReqDto } from '@/api/todo/dto/link-jira-issue.req.dto';
@@ -8,12 +9,15 @@ import { ListTodoStatusReqDto } from '@/api/todo/dto/list-todo-status.req.dto';
 import { UpdateTodoStatusReqDto } from '@/api/todo/dto/update-todo-status.req.dto';
 import { UpdateTodoReqDto } from '@/api/todo/dto/update-todo.req.dto';
 import { TodoPriority } from '@/api/todo/enums/todo-priority.enum';
+import { CreateTodoCommentUseCase } from '@/api/todo/use-cases/create-todo-comment.use-case';
 import { CreateTodoStatusUseCase } from '@/api/todo/use-cases/create-todo-status.use-case';
 import { CreateTodoUseCase } from '@/api/todo/use-cases/create-todo.use-case';
 import { DeleteTodoStatusUseCase } from '@/api/todo/use-cases/delete-todo-status.use-case';
 import { DeleteTodoUseCase } from '@/api/todo/use-cases/delete-todo.use-case';
 import { FindAgentTodosUseCase } from '@/api/todo/use-cases/find-agent-todos.use-case';
+import { FindTodoCommentsUseCase } from '@/api/todo/use-cases/find-todo-comments.use-case';
 import { FindTodoStatusesUseCase } from '@/api/todo/use-cases/find-todo-statuses.use-case';
+import { GetDashboardStatsUseCase } from '@/api/todo/use-cases/get-dashboard-stats.use-case';
 import { GetTodoDetailUseCase } from '@/api/todo/use-cases/get-todo-detail.use-case';
 import { LinkJiraIssueUseCase } from '@/api/todo/use-cases/link-jira-issue.use-case';
 import { ResolveTodoStatusUseCase } from '@/api/todo/use-cases/resolve-todo-status.use-case';
@@ -47,11 +51,18 @@ export class TaskToolFactory {
     private readonly updateTodoStatusUseCase: UpdateTodoStatusUseCase,
     private readonly deleteTodoStatusUseCase: DeleteTodoStatusUseCase,
     private readonly resolveTodoStatusUseCase: ResolveTodoStatusUseCase,
+    private readonly findTodoCommentsUseCase: FindTodoCommentsUseCase,
+    private readonly createTodoCommentUseCase: CreateTodoCommentUseCase,
+    private readonly getDashboardStatsUseCase: GetDashboardStatsUseCase,
     private readonly projectService: ProjectService,
   ) {}
 
-  createTools(tool: AiToolFactory, context: TaskToolContext) {
-    return {
+  createTools(
+    tool: AiToolFactory,
+    context: TaskToolContext,
+    allowedTools?: string[],
+  ) {
+    const tools = {
       listProjects: tool({
         description:
           'List projects/boards owned by the current user. Use this before creating or filtering tasks when the user mentions a project by name but not projectId.',
@@ -237,6 +248,39 @@ export class TaskToolFactory {
           return toToolTodo(todo, true);
         },
       }),
+      listTaskComments: tool({
+        description: 'List comments for a task owned by the current user.',
+        inputSchema: z.object({
+          taskId: z.string().uuid(),
+        }),
+        execute: async ({ taskId }) =>
+          this.findTodoCommentsUseCase.execute(taskId as Uuid, context.userId),
+      }),
+      createTaskComment: tool({
+        description:
+          'Create a comment/note for a task owned by the current user.',
+        inputSchema: z.object({
+          taskId: z.string().uuid(),
+          content: z.string().min(1).max(2000),
+        }),
+        execute: async ({ taskId, content }) =>
+          this.createTodoCommentUseCase.execute(
+            taskId as Uuid,
+            context.userId,
+            { content } as CreateTodoCommentReqDto,
+          ),
+      }),
+      getDashboardStats: tool({
+        description:
+          'Get dashboard/statistics for tasks owned by the current user.',
+        inputSchema: z.object({
+          projectId: z.string().uuid().optional(),
+        }),
+        execute: async ({ projectId }) =>
+          this.getDashboardStatsUseCase.execute(context.userId, {
+            projectId: projectId as Uuid | undefined,
+          }),
+      }),
       createTask: tool({
         description:
           'Create a new task for the current user. If statusId is unknown, use statusName to resolve a board column.',
@@ -351,6 +395,8 @@ export class TaskToolFactory {
         },
       }),
     };
+
+    return this.filterTools(tools, allowedTools);
   }
 
   async executeConfirmedTool(
@@ -423,6 +469,17 @@ export class TaskToolFactory {
       input,
       message: this.buildConfirmationMessage(toolName),
     };
+  }
+
+  private filterTools(
+    tools: Record<string, unknown>,
+    allowedTools?: string[],
+  ): Record<string, unknown> {
+    if (!allowedTools) return tools;
+    const allowed = new Set(allowedTools);
+    return Object.fromEntries(
+      Object.entries(tools).filter(([name]) => allowed.has(name)),
+    );
   }
 
   private buildConfirmationMessage(toolName: string): string {

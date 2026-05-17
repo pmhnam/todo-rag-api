@@ -3,16 +3,26 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ToolConfirmationDto } from '../dto/chat.req.dto';
 import { RagConversationEntity } from '../entities/rag-conversation.entity';
 import { RagMessageEntity } from '../entities/rag-message.entity';
+import { AiIntent } from '../enums/ai-intent.enum';
+import {
+  OutputValidatorService,
+  TODO_SCOPE_REFUSAL,
+} from '../guard/output-validator.service';
+import { RuleBasedGuardService } from '../guard/rule-based-guard.service';
+import { IntentLoggingService } from '../intent/intent-logging.service';
+import { IntentRouterService } from '../intent/intent-router.service';
+import { LlmClassifierService } from '../intent/llm-classifier.service';
+import { INTENT_TOOL_PERMISSIONS } from '../permission/intent-permissions';
 import { RagConversationRepository } from '../repositories/rag-conversation.repository';
 import { RagMessageRepository } from '../repositories/rag-message.repository';
+import { IntentClassification } from '../types/intent-classification.type';
 import { RagContextChunk } from '../types/rag.types';
 import { RagPromptBuilderService } from './rag-prompt-builder.service';
 import { SearchService } from './search.service';
 import { TaskAgentService, TaskAgentToolCall } from './task-agent.service';
-import { TaskIntentClassifierService } from './task-intent-classifier.service';
 
-const OUT_OF_SCOPE_RESPONSE =
-  'Xin lỗi, tôi chỉ có thể hỗ trợ các tác vụ liên quan đến Todo trong hệ thống này.';
+const AMBIGUOUS_RESPONSE =
+  'Bạn muốn tôi thao tác gì trong hệ thống task/project? Ví dụ: tạo task, tìm task, đổi trạng thái, thêm comment, gắn tag hoặc xem dashboard.';
 
 @Injectable()
 export class RagService {
@@ -24,7 +34,11 @@ export class RagService {
     private readonly searchService: SearchService,
     private readonly ragPromptBuilderService: RagPromptBuilderService,
     private readonly taskAgentService: TaskAgentService,
-    private readonly taskIntentClassifierService: TaskIntentClassifierService,
+    private readonly ruleBasedGuardService: RuleBasedGuardService,
+    private readonly intentRouterService: IntentRouterService,
+    private readonly llmClassifierService: LlmClassifierService,
+    private readonly outputValidatorService: OutputValidatorService,
+    private readonly intentLoggingService: IntentLoggingService,
   ) {}
 
   async query(
@@ -66,21 +80,50 @@ export class RagService {
       };
     }
 
-    const intent = this.taskIntentClassifierService.classify(userMessage);
-    if (intent === 'OUT_OF_SCOPE') {
+    const classification = await this.classifyIntent(userMessage);
+    if (classification.intent === AiIntent.OUT_OF_SCOPE) {
       await this.saveMessagePair(
         conversationId,
         userMessage,
-        OUT_OF_SCOPE_RESPONSE,
+        TODO_SCOPE_REFUSAL,
         [],
       );
+      await this.intentLoggingService.log({
+        userId,
+        message: userMessage,
+        classification,
+        accepted: false,
+      });
 
       return {
-        response: OUT_OF_SCOPE_RESPONSE,
+        response: TODO_SCOPE_REFUSAL,
         contextChunks: [],
         toolCalls: [],
       };
     }
+
+    if (classification.intent === AiIntent.AMBIGUOUS) {
+      await this.saveMessagePair(
+        conversationId,
+        userMessage,
+        AMBIGUOUS_RESPONSE,
+        [],
+      );
+      await this.intentLoggingService.log({
+        userId,
+        message: userMessage,
+        classification,
+        accepted: false,
+      });
+
+      return {
+        response: AMBIGUOUS_RESPONSE,
+        contextChunks: [],
+        toolCalls: [],
+      };
+    }
+
+    const allowedTools = INTENT_TOOL_PERMISSIONS[classification.intent];
 
     const searchResults = await this.searchService.search(
       userId,
@@ -107,14 +150,32 @@ export class RagService {
       previousMessages,
       projectId,
       ragContext: context,
+      intent: classification.intent,
+      allowedTools,
     });
+
+    const outputValidation = this.outputValidatorService.validate({
+      response: agentResponse.text,
+      intent: classification.intent,
+    });
+    const responseText = outputValidation.response;
 
     await this.saveMessagePair(
       conversationId,
       userMessage,
-      agentResponse.text,
+      responseText,
       contextChunks,
     );
+
+    await this.intentLoggingService.log({
+      userId,
+      message: userMessage,
+      classification,
+      finalToolCalled: agentResponse.toolCalls
+        .map((call) => call.toolName)
+        .join(','),
+      accepted: outputValidation.valid,
+    });
 
     if (previousMessages.length === 0 && !conversation.title) {
       conversation.title = userMessage.slice(0, 100);
@@ -123,7 +184,7 @@ export class RagService {
     }
 
     return {
-      response: agentResponse.text,
+      response: responseText,
       contextChunks,
       toolCalls: agentResponse.toolCalls,
       pendingConfirmation: agentResponse.pendingConfirmation,
@@ -202,5 +263,31 @@ export class RagService {
         content: assistantMessage,
       }),
     );
+  }
+
+  private async classifyIntent(message: string): Promise<IntentClassification> {
+    const ruleResult = this.ruleBasedGuardService.check(message);
+    if (ruleResult) return ruleResult;
+
+    let classification: IntentClassification;
+    try {
+      classification = await this.intentRouterService.classify(message);
+    } catch (error: any) {
+      this.logger.warn(`Embedding intent router failed: ${error.message}`);
+      classification = {
+        intent: AiIntent.AMBIGUOUS,
+        confidence: 0,
+        reason: 'Embedding intent router failed.',
+        nearest: [],
+      };
+    }
+
+    if (classification.intent !== AiIntent.AMBIGUOUS) {
+      return classification;
+    }
+
+    return this.llmClassifierService.classify(message, {
+      nearestExamples: classification.nearest,
+    });
   }
 }

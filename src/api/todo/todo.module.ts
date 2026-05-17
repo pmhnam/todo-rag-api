@@ -31,6 +31,7 @@ import { FindTodoActivitiesUseCase } from './use-cases/find-todo-activities.use-
 import { FindTodoCommentsUseCase } from './use-cases/find-todo-comments.use-case';
 import { FindTodoStatusesUseCase } from './use-cases/find-todo-statuses.use-case';
 import { FindTodosUseCase } from './use-cases/find-todos.use-case';
+import { GetDashboardStatsUseCase } from './use-cases/get-dashboard-stats.use-case';
 import { GetTodoDetailUseCase } from './use-cases/get-todo-detail.use-case';
 import { GetTodoStatusDetailUseCase } from './use-cases/get-todo-status-detail.use-case';
 import { LinkJiraIssueUseCase } from './use-cases/link-jira-issue.use-case';
@@ -87,6 +88,7 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
     UpdateTodoCommentUseCase,
     DeleteTodoCommentUseCase,
     FindTodoActivitiesUseCase,
+    GetDashboardStatsUseCase,
   ],
   exports: [
     TodoStatusService,
@@ -103,6 +105,9 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
     DeleteTodoStatusUseCase,
     ReorderTodosUseCase,
     ResolveTodoStatusUseCase,
+    FindTodoCommentsUseCase,
+    CreateTodoCommentUseCase,
+    GetDashboardStatsUseCase,
   ],
 })
 export class TodoModule {}
