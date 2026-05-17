@@ -60,4 +60,29 @@ describe('LlmClassifierService', () => {
       intent: AiIntent.AMBIGUOUS,
     });
   });
+
+  it('extracts classification JSON from prose output', async () => {
+    llmService.generate.mockResolvedValueOnce({
+      content:
+        'We need to classify this. {"intent":"TASK_SEARCH","confidence":0.8,"reason":"Task lookup"}',
+      model: 'test',
+    });
+
+    await expect(service.classify('Tìm task deploy')).resolves.toMatchObject({
+      intent: AiIntent.TASK_SEARCH,
+      confidence: 0.8,
+    });
+  });
+
+  it('extracts classification JSON from fenced output', async () => {
+    llmService.generate.mockResolvedValueOnce({
+      content:
+        '```json\n{"intent":"OUT_OF_SCOPE","confidence":0.95,"reason":"Code request"}\n```',
+      model: 'test',
+    });
+
+    await expect(service.classify('Viết code HTML')).resolves.toMatchObject({
+      intent: AiIntent.OUT_OF_SCOPE,
+    });
+  });
 });

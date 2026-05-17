@@ -1,5 +1,5 @@
 import { Uuid } from '@/common/types/common.type';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ToolConfirmationDto } from '../dto/chat.req.dto';
 import { RagConversationEntity } from '../entities/rag-conversation.entity';
 import { RagMessageEntity } from '../entities/rag-message.entity';
@@ -8,15 +8,11 @@ import {
   OutputValidatorService,
   TODO_SCOPE_REFUSAL,
 } from '../guard/output-validator.service';
-import { RuleBasedGuardService } from '../guard/rule-based-guard.service';
+import { IntentClassifierService } from '../intent/intent-classifier.service';
 import { IntentLoggingService } from '../intent/intent-logging.service';
-import { IntentRouterService } from '../intent/intent-router.service';
-import { LlmClassifierService } from '../intent/llm-classifier.service';
 import { INTENT_TOOL_PERMISSIONS } from '../permission/intent-permissions';
-import { RagConversationRepository } from '../repositories/rag-conversation.repository';
-import { RagMessageRepository } from '../repositories/rag-message.repository';
-import { IntentClassification } from '../types/intent-classification.type';
 import { RagContextChunk } from '../types/rag.types';
+import { RagConversationService } from './rag-conversation.service';
 import { RagPromptBuilderService } from './rag-prompt-builder.service';
 import { SearchService } from './search.service';
 import { TaskAgentService, TaskAgentToolCall } from './task-agent.service';
@@ -29,14 +25,11 @@ export class RagService {
   private readonly logger = new Logger(RagService.name);
 
   constructor(
-    private readonly conversationRepository: RagConversationRepository,
-    private readonly messageRepository: RagMessageRepository,
+    private readonly conversationService: RagConversationService,
     private readonly searchService: SearchService,
     private readonly ragPromptBuilderService: RagPromptBuilderService,
     private readonly taskAgentService: TaskAgentService,
-    private readonly ruleBasedGuardService: RuleBasedGuardService,
-    private readonly intentRouterService: IntentRouterService,
-    private readonly llmClassifierService: LlmClassifierService,
+    private readonly intentClassifierService: IntentClassifierService,
     private readonly outputValidatorService: OutputValidatorService,
     private readonly intentLoggingService: IntentLoggingService,
   ) {}
@@ -58,7 +51,10 @@ export class RagService {
       message: string;
     };
   }> {
-    const conversation = await this.getConversation(conversationId, userId);
+    const conversation = await this.conversationService.getConversation(
+      conversationId,
+      userId,
+    );
     if (confirmation) {
       const agentResponse = await this.taskAgentService.confirmTool({
         userId,
@@ -66,12 +62,12 @@ export class RagService {
         input: confirmation.approvedInput,
       });
 
-      await this.saveMessagePair(
+      await this.conversationService.saveMessagePair({
         conversationId,
         userMessage,
-        agentResponse.text,
-        [],
-      );
+        assistantMessage: agentResponse.text,
+        contextChunks: [],
+      });
 
       return {
         response: agentResponse.text,
@@ -80,15 +76,16 @@ export class RagService {
       };
     }
 
-    const classification = await this.classifyIntent(userMessage);
+    const classification =
+      await this.intentClassifierService.classify(userMessage);
 
     if (classification.intent === AiIntent.OUT_OF_SCOPE) {
-      await this.saveMessagePair(
+      await this.conversationService.saveMessagePair({
         conversationId,
         userMessage,
-        TODO_SCOPE_REFUSAL,
-        [],
-      );
+        assistantMessage: TODO_SCOPE_REFUSAL,
+        contextChunks: [],
+      });
       await this.intentLoggingService.log({
         userId,
         message: userMessage,
@@ -104,12 +101,12 @@ export class RagService {
     }
 
     if (classification.intent === AiIntent.AMBIGUOUS) {
-      await this.saveMessagePair(
+      await this.conversationService.saveMessagePair({
         conversationId,
         userMessage,
-        AMBIGUOUS_RESPONSE,
-        [],
-      );
+        assistantMessage: AMBIGUOUS_RESPONSE,
+        contextChunks: [],
+      });
       await this.intentLoggingService.log({
         userId,
         message: userMessage,
@@ -139,11 +136,10 @@ export class RagService {
       `RAG query: found ${searchResults.length} context chunks`,
     );
 
-    const previousMessages =
-      await this.messageRepository.findRecentConversationMessages(
-        conversationId,
-        20,
-      );
+    const previousMessages = await this.conversationService.getRecentMessages(
+      conversationId,
+      20,
+    );
 
     const agentResponse = await this.taskAgentService.chat({
       userId,
@@ -165,12 +161,12 @@ export class RagService {
     });
     const responseText = outputValidation.response;
 
-    await this.saveMessagePair(
+    await this.conversationService.saveMessagePair({
       conversationId,
       userMessage,
-      responseText,
+      assistantMessage: responseText,
       contextChunks,
-    );
+    });
 
     await this.intentLoggingService.log({
       userId,
@@ -183,9 +179,11 @@ export class RagService {
     });
 
     if (previousMessages.length === 0 && !conversation.title) {
-      conversation.title = userMessage.slice(0, 100);
-      conversation.updatedBy = userId;
-      await this.conversationRepository.save(conversation);
+      await this.conversationService.setTitleIfEmpty({
+        conversation,
+        title: userMessage,
+        userId,
+      });
     }
 
     return {
@@ -204,96 +202,29 @@ export class RagService {
     userId: Uuid,
     title?: string,
   ): Promise<RagConversationEntity> {
-    const conversation = this.conversationRepository.create({
-      userId,
-      title,
-      createdBy: userId,
-      updatedBy: userId,
-    });
-    return this.conversationRepository.save(conversation);
+    return this.conversationService.createConversation(userId, title);
   }
 
   getConversations(userId: Uuid): Promise<RagConversationEntity[]> {
-    return this.conversationRepository.findManyOwned(userId);
+    return this.conversationService.getConversations(userId);
   }
 
   async getConversation(
     conversationId: Uuid,
     userId: Uuid,
   ): Promise<RagConversationEntity> {
-    const conversation = await this.conversationRepository.findOwnedById(
-      conversationId,
-      userId,
-    );
-
-    if (!conversation) {
-      throw new NotFoundException(`Conversation ${conversationId} not found`);
-    }
-
-    return conversation;
+    return this.conversationService.getConversation(conversationId, userId);
   }
 
   async getMessages(
     conversationId: Uuid,
     userId: Uuid,
   ): Promise<RagMessageEntity[]> {
-    await this.getConversation(conversationId, userId);
-    return this.messageRepository.findConversationMessages(conversationId);
+    return this.conversationService.getMessages(conversationId, userId);
   }
 
   async deleteConversation(conversationId: Uuid, userId: Uuid): Promise<void> {
-    const conversation = await this.getConversation(conversationId, userId);
-    await this.conversationRepository.remove(conversation);
-  }
-
-  private async saveMessagePair(
-    conversationId: Uuid,
-    userMessage: string,
-    assistantMessage: string,
-    contextChunks: RagContextChunk[],
-  ): Promise<void> {
-    await this.messageRepository.save(
-      this.messageRepository.create({
-        conversationId,
-        role: 'user',
-        content: userMessage,
-        contextChunks,
-      }),
-    );
-
-    await this.messageRepository.save(
-      this.messageRepository.create({
-        conversationId,
-        role: 'assistant',
-        content: assistantMessage,
-      }),
-    );
-  }
-
-  private async classifyIntent(message: string): Promise<IntentClassification> {
-    const ruleResult = this.ruleBasedGuardService.check(message);
-    if (ruleResult) return ruleResult;
-
-    let classification: IntentClassification;
-    try {
-      classification = await this.intentRouterService.classify(message);
-    } catch (error: any) {
-      this.logger.warn(`Embedding intent router failed: ${error.message}`);
-      classification = {
-        intent: AiIntent.AMBIGUOUS,
-        confidence: 0,
-        reason: 'Embedding intent router failed.',
-        nearest: [],
-      };
-    }
-
-    if (classification.intent !== AiIntent.AMBIGUOUS) {
-      return classification;
-    }
-
-    return this.llmClassifierService.classify(message, {
-      nearestExamples: classification.nearest,
-    });
+    return this.conversationService.deleteConversation(conversationId, userId);
   }
 
   private buildSafeAgentText(
