@@ -81,6 +81,7 @@ export class RagService {
     }
 
     const classification = await this.classifyIntent(userMessage);
+
     if (classification.intent === AiIntent.OUT_OF_SCOPE) {
       await this.saveMessagePair(
         conversationId,
@@ -154,8 +155,12 @@ export class RagService {
       allowedTools,
     });
 
+    const safeAgentText = this.buildSafeAgentText(
+      agentResponse,
+      classification.intent,
+    );
     const outputValidation = this.outputValidatorService.validate({
-      response: agentResponse.text,
+      response: safeAgentText,
       intent: classification.intent,
     });
     const responseText = outputValidation.response;
@@ -289,5 +294,55 @@ export class RagService {
     return this.llmClassifierService.classify(message, {
       nearestExamples: classification.nearest,
     });
+  }
+
+  private buildSafeAgentText(
+    agentResponse: { text: string; toolCalls: TaskAgentToolCall[] },
+    intent: AiIntent,
+  ): string {
+    if (!this.outputValidatorService.hasReasoningLeak(agentResponse.text)) {
+      return agentResponse.text;
+    }
+
+    if (intent === AiIntent.DASHBOARD_QUERY) {
+      const countCall = [...agentResponse.toolCalls]
+        .reverse()
+        .find((call) => call.toolName === 'countTasks');
+      const countOutput = countCall?.output as
+        | {
+            total?: number;
+            groupBy?: string;
+            groups?: Array<{ label?: string; key: string; count: number }>;
+          }
+        | undefined;
+
+      if (typeof countOutput?.total === 'number') {
+        const groupText = countOutput.groups?.length
+          ? ` (${countOutput.groups
+              .map((item) => `${item.label || item.key}: ${item.count}`)
+              .join(', ')})`
+          : '';
+        return `Bạn có ${countOutput.total} việc${groupText}.`;
+      }
+
+      const statsCall = [...agentResponse.toolCalls]
+        .reverse()
+        .find((call) => call.toolName === 'getDashboardStats');
+      const stats = statsCall?.output as
+        | {
+            total?: number;
+            byStatus?: Array<{ statusName: string; count: number }>;
+          }
+        | undefined;
+
+      if (typeof stats?.total === 'number') {
+        const statusText = stats.byStatus?.length
+          ? ` (${stats.byStatus.map((item) => `${item.statusName}: ${item.count}`).join(', ')})`
+          : '';
+        return `Bạn có ${stats.total} việc${statusText}.`;
+      }
+    }
+
+    return 'Mình đã xử lý yêu cầu trong hệ thống Todo, nhưng phản hồi từ AI không hợp lệ. Bạn vui lòng hỏi lại ngắn gọn hơn.';
   }
 }

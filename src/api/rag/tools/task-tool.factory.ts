@@ -9,6 +9,7 @@ import { ListTodoStatusReqDto } from '@/api/todo/dto/list-todo-status.req.dto';
 import { UpdateTodoStatusReqDto } from '@/api/todo/dto/update-todo-status.req.dto';
 import { UpdateTodoReqDto } from '@/api/todo/dto/update-todo.req.dto';
 import { TodoPriority } from '@/api/todo/enums/todo-priority.enum';
+import { CountTasksUseCase } from '@/api/todo/use-cases/count-tasks.use-case';
 import { CreateTodoCommentUseCase } from '@/api/todo/use-cases/create-todo-comment.use-case';
 import { CreateTodoStatusUseCase } from '@/api/todo/use-cases/create-todo-status.use-case';
 import { CreateTodoUseCase } from '@/api/todo/use-cases/create-todo.use-case';
@@ -54,6 +55,7 @@ export class TaskToolFactory {
     private readonly findTodoCommentsUseCase: FindTodoCommentsUseCase,
     private readonly createTodoCommentUseCase: CreateTodoCommentUseCase,
     private readonly getDashboardStatsUseCase: GetDashboardStatsUseCase,
+    private readonly countTasksUseCase: CountTasksUseCase,
     private readonly projectService: ProjectService,
   ) {}
 
@@ -279,6 +281,45 @@ export class TaskToolFactory {
         execute: async ({ projectId }) =>
           this.getDashboardStatsUseCase.execute(context.userId, {
             projectId: projectId as Uuid | undefined,
+          }),
+      }),
+      countTasks: tool({
+        description:
+          'Count tasks using database aggregates. Use this for questions like how many tasks, counts by status, priority, due date, or project. Prefer this over findTasks when the user asks for counts.',
+        inputSchema: z.object({
+          projectId: z.string().uuid().optional(),
+          statusId: z.string().uuid().optional(),
+          statusName: z
+            .string()
+            .optional()
+            .describe('Exact status/column name, e.g. Todo, Doing, Done'),
+          priority: z.enum(TodoPriority).optional(),
+          dueDate: z.enum(['today', 'overdue', 'upcoming', 'none']).optional(),
+          from: nullableString.describe('Due date lower bound, YYYY-MM-DD'),
+          to: nullableString.describe('Due date upper bound, YYYY-MM-DD'),
+          groupBy: z
+            .enum(['status', 'priority', 'dueDate', 'project'])
+            .optional(),
+        }),
+        execute: async ({
+          projectId,
+          statusId,
+          statusName,
+          priority,
+          dueDate,
+          from,
+          to,
+          groupBy,
+        }) =>
+          this.countTasksUseCase.execute(context.userId, {
+            projectId: projectId as Uuid | undefined,
+            statusId: statusId as Uuid | undefined,
+            statusName,
+            priority,
+            dueDate,
+            from: this.parseDate(from),
+            to: this.parseDate(to),
+            groupBy,
           }),
       }),
       createTask: tool({

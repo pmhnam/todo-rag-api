@@ -18,6 +18,7 @@ describe('TaskToolFactory', () => {
       {} as any,
       {} as any,
       {} as any,
+      {} as any,
     );
   }
 

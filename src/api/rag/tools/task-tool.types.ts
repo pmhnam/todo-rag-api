@@ -1,6 +1,6 @@
 import { Uuid } from '@/common/types/common.type';
 
-export type AiToolFactory = (definition: unknown) => unknown;
+export type AiToolFactory = (typeof import('ai'))['tool'];
 
 export type TaskToolContext = {
   userId: Uuid;

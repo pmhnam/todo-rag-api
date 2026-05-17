@@ -30,4 +30,23 @@ export class OutputValidatorService {
 
     return { valid: true, response: params.response };
   }
+
+  hasReasoningLeak(response: string): boolean {
+    const normalized = response.toLowerCase();
+    const reasoningPatterns = [
+      /^okay,? let's see/,
+      /the user is asking/,
+      /looking at the history/,
+      /i should /,
+      /i need to /,
+      /let me check/,
+      /wait,? /,
+      /therefore,? i should/,
+      /so i need to invoke/,
+      /the tool response/,
+      /system message/,
+    ];
+
+    return reasoningPatterns.some((rule) => rule.test(normalized));
+  }
 }

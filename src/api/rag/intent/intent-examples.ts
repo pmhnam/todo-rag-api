@@ -63,6 +63,9 @@ export const INTENT_EXAMPLES: Record<
     'task này bị blocked',
   ],
   [AiIntent.DASHBOARD_QUERY]: [
+    'có bao nhiêu việc',
+    'bao nhiêu việc',
+    'có bao nhiêu việc cần làm',
     'thống kê task tuần này',
     'dashboard hôm nay thế nào',
     'bao nhiêu task đã hoàn thành',

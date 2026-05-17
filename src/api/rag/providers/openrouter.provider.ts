@@ -96,7 +96,7 @@ export class OpenRouterProvider implements ILlmProvider {
             if (contentChunk) {
               fullContent += contentChunk;
             }
-          } catch (e) {
+          } catch (_error) {
             this.logger.warn(`Failed to parse stream line: ${line}`);
           }
         }

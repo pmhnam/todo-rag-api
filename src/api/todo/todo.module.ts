@@ -20,6 +20,7 @@ import { TodoIndexingService } from './services/todo-indexing.service';
 import { TodoJiraSyncService } from './services/todo-jira-sync.service';
 import { TodoStatusService } from './services/todo-status.service';
 import { TodoService } from './services/todo.service';
+import { CountTasksUseCase } from './use-cases/count-tasks.use-case';
 import { CreateTodoCommentUseCase } from './use-cases/create-todo-comment.use-case';
 import { CreateTodoStatusUseCase } from './use-cases/create-todo-status.use-case';
 import { CreateTodoUseCase } from './use-cases/create-todo.use-case';
@@ -72,6 +73,7 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
     FindTodosUseCase,
     GetTodoDetailUseCase,
     CreateTodoUseCase,
+    CountTasksUseCase,
     UpdateTodoUseCase,
     LinkJiraIssueUseCase,
     DeleteTodoUseCase,
@@ -95,6 +97,7 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
     FindTodosUseCase,
     GetTodoDetailUseCase,
     CreateTodoUseCase,
+    CountTasksUseCase,
     UpdateTodoUseCase,
     LinkJiraIssueUseCase,
     DeleteTodoUseCase,

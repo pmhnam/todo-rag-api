@@ -20,4 +20,19 @@ describe('INTENT_TOOL_PERMISSIONS', () => {
       'deleteTask',
     );
   });
+
+  it('allows dashboard read-only aggregate tools', () => {
+    expect(INTENT_TOOL_PERMISSIONS[AiIntent.DASHBOARD_QUERY]).toEqual([
+      'listProjects',
+      'listTaskStatuses',
+      'getDashboardStats',
+      'countTasks',
+    ]);
+    expect(INTENT_TOOL_PERMISSIONS[AiIntent.DASHBOARD_QUERY]).not.toContain(
+      'updateTask',
+    );
+    expect(INTENT_TOOL_PERMISSIONS[AiIntent.DASHBOARD_QUERY]).not.toContain(
+      'deleteTask',
+    );
+  });
 });

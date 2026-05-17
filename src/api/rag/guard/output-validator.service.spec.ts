@@ -28,4 +28,12 @@ describe('OutputValidatorService', () => {
       }),
     ).toEqual({ valid: false, response: TODO_SCOPE_REFUSAL });
   });
+
+  it('detects leaked reasoning text', () => {
+    expect(
+      service.hasReasoningLeak(
+        "Okay, let's see. The user is asking how many tasks.",
+      ),
+    ).toBe(true);
+  });
 });

@@ -1,44 +1,52 @@
 import { AiIntent } from '../enums/ai-intent.enum';
 
+export const READ_TOOLS = {
+  PROJECT: ['listProjects'],
+  STATUS: ['listTaskStatuses'],
+  TASK: ['findTasks', 'getTaskDetails', 'countTasks'],
+  COMMENT: ['listTaskComments'],
+  DASHBOARD: ['getDashboardStats', 'countTasks'],
+} as const;
+
+export const WRITE_TOOLS = {
+  PROJECT: ['createProject', 'updateProject', 'deleteProject'],
+  STATUS: [
+    'createTaskStatus',
+    'updateTaskStatusDefinition',
+    'deleteTaskStatus',
+  ],
+  TASK: ['createTask', 'updateTask', 'deleteTask', 'updateTaskStatus'],
+  COMMENT: ['createTaskComment'],
+  JIRA: ['linkJiraIssue'],
+} as const;
+
 export const INTENT_TOOL_PERMISSIONS: Record<AiIntent, string[]> = {
-  [AiIntent.TASK_CREATE]: ['listProjects', 'listTaskStatuses', 'createTask'],
-  [AiIntent.TASK_UPDATE]: [
-    'findTasks',
-    'getTaskDetails',
-    'updateTask',
-    'linkJiraIssue',
+  [AiIntent.TASK_CREATE]: [
+    ...READ_TOOLS.PROJECT,
+    ...READ_TOOLS.STATUS,
+    'createTask',
   ],
-  [AiIntent.TASK_DELETE]: ['findTasks', 'getTaskDetails', 'deleteTask'],
+  [AiIntent.TASK_UPDATE]: [...READ_TOOLS.TASK, 'updateTask', 'linkJiraIssue'],
+  [AiIntent.TASK_DELETE]: [...READ_TOOLS.TASK, 'deleteTask'],
   [AiIntent.TASK_SEARCH]: [
-    'listProjects',
-    'listTaskStatuses',
-    'findTasks',
-    'getTaskDetails',
+    ...READ_TOOLS.PROJECT,
+    ...READ_TOOLS.STATUS,
+    ...READ_TOOLS.TASK,
   ],
-  [AiIntent.PROJECT_MANAGE]: [
-    'listProjects',
-    'createProject',
-    'updateProject',
-    'deleteProject',
-  ],
-  [AiIntent.COMMENT_CREATE]: [
-    'findTasks',
-    'getTaskDetails',
-    'createTaskComment',
-  ],
-  [AiIntent.COMMENT_SEARCH]: [
-    'findTasks',
-    'getTaskDetails',
-    'listTaskComments',
-  ],
-  [AiIntent.TAG_MANAGE]: ['findTasks', 'getTaskDetails', 'updateTask'],
+  [AiIntent.PROJECT_MANAGE]: [...READ_TOOLS.PROJECT, ...WRITE_TOOLS.PROJECT],
+  [AiIntent.COMMENT_CREATE]: [...READ_TOOLS.TASK, 'createTaskComment'],
+  [AiIntent.COMMENT_SEARCH]: [...READ_TOOLS.TASK, ...READ_TOOLS.COMMENT],
+  [AiIntent.TAG_MANAGE]: [...READ_TOOLS.TASK, 'updateTask'],
   [AiIntent.STATUS_UPDATE]: [
-    'findTasks',
-    'getTaskDetails',
-    'listTaskStatuses',
+    ...READ_TOOLS.TASK,
+    ...READ_TOOLS.STATUS,
     'updateTaskStatus',
   ],
-  [AiIntent.DASHBOARD_QUERY]: ['getDashboardStats'],
+  [AiIntent.DASHBOARD_QUERY]: [
+    ...READ_TOOLS.PROJECT,
+    ...READ_TOOLS.STATUS,
+    ...READ_TOOLS.DASHBOARD,
+  ],
   [AiIntent.TODO_HELP]: [],
   [AiIntent.OUT_OF_SCOPE]: [],
   [AiIntent.AMBIGUOUS]: [],

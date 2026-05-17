@@ -186,6 +186,131 @@ export class TodoRepository {
     };
   }
 
+  async countTasks(
+    userId: Uuid,
+    params: {
+      projectId?: Uuid;
+      statusId?: Uuid;
+      statusName?: string;
+      priority?: TodoPriority;
+      dueDate?: 'today' | 'overdue' | 'upcoming' | 'none';
+      from?: Date;
+      to?: Date;
+      groupBy?: 'status' | 'priority' | 'dueDate' | 'project';
+    } = {},
+  ): Promise<{
+    total: number;
+    groupBy?: string;
+    groups?: Array<{ key: string; label?: string; count: number }>;
+  }> {
+    const query = this.repository
+      .createQueryBuilder('todo')
+      .leftJoin('todo.status', 'status')
+      .leftJoin('todo.project', 'project')
+      .where('todo.user_id = :userId', { userId });
+
+    if (params.projectId) {
+      query.andWhere('todo.project_id = :projectId', {
+        projectId: params.projectId,
+      });
+    }
+
+    if (params.statusId) {
+      query.andWhere('todo.status_id = :statusId', {
+        statusId: params.statusId,
+      });
+    }
+
+    if (params.statusName) {
+      query.andWhere('status.name ILIKE :statusName', {
+        statusName: params.statusName,
+      });
+    }
+
+    if (params.priority) {
+      query.andWhere('todo.priority = :priority', {
+        priority: params.priority,
+      });
+    }
+
+    if (params.dueDate === 'today') {
+      query.andWhere('todo.due_date = CURRENT_DATE');
+    }
+
+    if (params.dueDate === 'overdue') {
+      query.andWhere('todo.due_date < CURRENT_DATE');
+    }
+
+    if (params.dueDate === 'upcoming') {
+      query.andWhere('todo.due_date > CURRENT_DATE');
+    }
+
+    if (params.dueDate === 'none') {
+      query.andWhere('todo.due_date IS NULL');
+    }
+
+    if (params.from) {
+      query.andWhere('todo.due_date >= :from', { from: params.from });
+    }
+
+    if (params.to) {
+      query.andWhere('todo.due_date <= :to', { to: params.to });
+    }
+
+    if (!params.groupBy) {
+      return { total: await query.getCount() };
+    }
+
+    const groupConfig = {
+      status: {
+        key: 'todo.status_id',
+        label: 'status.name',
+      },
+      priority: {
+        key: 'todo.priority',
+        label: 'todo.priority',
+      },
+      dueDate: {
+        key: `CASE
+          WHEN todo.due_date IS NULL THEN 'none'
+          WHEN todo.due_date < CURRENT_DATE THEN 'overdue'
+          WHEN todo.due_date = CURRENT_DATE THEN 'today'
+          ELSE 'upcoming'
+        END`,
+        label: `CASE
+          WHEN todo.due_date IS NULL THEN 'No due date'
+          WHEN todo.due_date < CURRENT_DATE THEN 'Overdue'
+          WHEN todo.due_date = CURRENT_DATE THEN 'Today'
+          ELSE 'Upcoming'
+        END`,
+      },
+      project: {
+        key: 'todo.project_id',
+        label: 'project.name',
+      },
+    }[params.groupBy];
+
+    const rows = await query
+      .clone()
+      .select(groupConfig.key, 'key')
+      .addSelect(groupConfig.label, 'label')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy(groupConfig.key)
+      .addGroupBy(groupConfig.label)
+      .orderBy('count', 'DESC')
+      .getRawMany<{ key: string; label?: string; count: string }>();
+
+    return {
+      total: rows.reduce((sum, row) => sum + Number(row.count), 0),
+      groupBy: params.groupBy,
+      groups: rows.map((row) => ({
+        key: row.key,
+        label: row.label,
+        count: Number(row.count),
+      })),
+    };
+  }
+
   create(data: Partial<TodoEntity>): TodoEntity {
     return this.repository.create(data);
   }

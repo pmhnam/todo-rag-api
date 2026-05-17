@@ -86,7 +86,7 @@ export class OllamaProvider implements ILlmProvider {
           if (parsed.done) {
             lastData = parsed;
           }
-        } catch (e) {
+        } catch (_error) {
           this.logger.warn(`Failed to parse stream line: ${line}`);
         }
       }
@@ -162,7 +162,7 @@ export class OllamaProvider implements ILlmProvider {
           if (parsed.done) {
             lastData = parsed;
           }
-        } catch (e) {
+        } catch (_error) {
           this.logger.warn(`Failed to parse stream line: ${line}`);
         }
       }
