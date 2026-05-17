@@ -17,7 +17,7 @@ services:
         condition: service_healthy
     networks:
       - todo-rag-network
-      - shared_backend_net
+      - proxy
 
   migrate:
     image: todo-rag-api
@@ -33,7 +33,7 @@ services:
         condition: service_started
     networks:
       - todo-rag-network
-      - shared_backend_net
+      - proxy
     restart: 'no'
 
   db:
@@ -46,29 +46,36 @@ services:
       # Mount a script to automatically enable the extension on startup
       - ./init-db:/docker-entrypoint-initdb.d
     environment:
-      POSTGRES_DB: todo_rag_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       TZ: 'UTC'
     ports:
-      - '5432:5432'
+      - '127.0.0.1:5432:5432'
     networks:
       - todo-rag-network
-      - shared_backend_net
 
   redis:
     image: redis/redis-stack:latest
     platform: linux/arm64
+    container_name: todo-rag-redis
     restart: always
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD}
+
     volumes:
       - redis_data:/data
+
     healthcheck:
-      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
-    environment:
-      REDIS_ARGS: '--requirepass redispass'
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD}', 'PING']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
     networks:
       - todo-rag-network
-      - shared_backend_net
 
 volumes:
   postgres_data:
@@ -76,7 +83,7 @@ volumes:
 
 networks:
   # For cloudflare tunnel to access the API container
-  shared_backend_net:
+  proxy:
     external: true
   todo-rag-network:
     driver: bridge
