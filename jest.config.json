@@ -31,6 +31,7 @@
     "^@/mail(.*)$": "<rootDir>/mail$1",
     "^@/redis(.*)$": "<rootDir>/redis$1",
     "^@/shared(.*)$": "<rootDir>/shared$1",
+    "^@/storage(.*)$": "<rootDir>/storage$1",
     "^@/utils(.*)$": "<rootDir>/utils$1"
   },
   "setupFiles": ["../setup-jest.mjs"],
