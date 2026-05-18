@@ -1,9 +1,11 @@
 import {
+  ClassFieldOptional,
   DateField,
   StringField,
   UUIDField,
 } from '@/decorators/field.decorators';
 import { Exclude, Expose } from 'class-transformer';
+import { TodoAttachmentResDto } from './todo-attachment.res.dto';
 
 @Exclude()
 export class TodoCommentResDto {
@@ -34,4 +36,8 @@ export class TodoCommentResDto {
   @DateField()
   @Expose()
   updatedAt: Date;
+
+  @ClassFieldOptional(() => TodoAttachmentResDto, { each: true })
+  @Expose()
+  attachments?: TodoAttachmentResDto[];
 }

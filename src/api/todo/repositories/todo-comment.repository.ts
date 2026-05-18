@@ -14,6 +14,7 @@ export class TodoCommentRepository {
   findManyByTodo(todoId: Uuid): Promise<TodoCommentEntity[]> {
     return this.repository.find({
       where: { todoId },
+      relations: { attachments: true },
       order: { createdAt: 'ASC' },
     });
   }

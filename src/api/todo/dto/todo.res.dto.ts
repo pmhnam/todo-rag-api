@@ -14,6 +14,7 @@ import { Exclude, Expose } from 'class-transformer';
 import { JiraSyncStatus } from '../enums/jira-sync-status.enum';
 import { TodoPriority } from '../enums/todo-priority.enum';
 import { ExternalLinkDto } from './create-todo.req.dto';
+import { TodoAttachmentResDto } from './todo-attachment.res.dto';
 import { TodoStatusResDto } from './todo-status.res.dto';
 
 @Exclude()
@@ -98,4 +99,8 @@ export class TodoResDto {
   @BooleanFieldOptional()
   @Expose()
   generatedByAi?: boolean;
+
+  @ClassFieldOptional(() => TodoAttachmentResDto, { each: true })
+  @Expose()
+  attachments?: WrapperType<TodoAttachmentResDto[]>;
 }

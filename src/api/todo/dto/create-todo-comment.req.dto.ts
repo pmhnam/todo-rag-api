@@ -1,6 +1,9 @@
-import { StringField } from '@/decorators/field.decorators';
+import { StringFieldOptional } from '@/decorators/field.decorators';
 
 export class CreateTodoCommentReqDto {
-  @StringField({ maxLength: 2000 })
-  readonly content: string;
+  @StringFieldOptional({ maxLength: 2000 })
+  readonly content?: string;
+
+  @StringFieldOptional({ each: true, maxLength: 700 })
+  readonly attachmentKeys?: string[];
 }

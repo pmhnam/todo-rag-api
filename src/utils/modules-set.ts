@@ -11,6 +11,7 @@ import { TypeOrmConfigService } from '@/database/typeorm-config.service';
 import mailConfig from '@/mail/config/mail.config';
 import { MailModule } from '@/mail/mail.module';
 import redisConfig from '@/redis/config/redis.config';
+import storageConfig from '@/storage/config/storage.config';
 import { createKeyvNonBlocking } from '@keyv/redis';
 import { BullModule } from '@nestjs/bullmq';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -40,6 +41,7 @@ function generateModulesSet() {
         mailConfig,
         ollamaConfig,
         llmConfig,
+        storageConfig,
       ],
       envFilePath: ['.env'],
     }),

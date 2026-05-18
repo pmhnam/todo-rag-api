@@ -7,9 +7,11 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   Relation,
 } from 'typeorm';
+import { TodoAttachmentEntity } from './todo-attachment.entity';
 import { TodoEntity } from './todo.entity';
 
 @Entity('todo_comment')
@@ -48,6 +50,9 @@ export class TodoCommentEntity extends AbstractEntity {
 
   @Column({ name: 'content', type: 'text' })
   content!: string;
+
+  @OneToMany(() => TodoAttachmentEntity, (attachment) => attachment.comment)
+  attachments?: Relation<TodoAttachmentEntity[]>;
 
   @DeleteDateColumn({
     name: 'deleted_at',

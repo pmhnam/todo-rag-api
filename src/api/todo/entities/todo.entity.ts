@@ -8,12 +8,14 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   Relation,
 } from 'typeorm';
 import { ExternalLinkDto } from '../dto/create-todo.req.dto';
 import { JiraSyncStatus } from '../enums/jira-sync-status.enum';
 import { TodoPriority } from '../enums/todo-priority.enum';
+import { TodoAttachmentEntity } from './todo-attachment.entity';
 import { TodoStatusEntity } from './todo-status.entity';
 
 @Entity('todo')
@@ -124,4 +126,7 @@ export class TodoEntity extends AbstractEntity {
     default: false,
   })
   generatedByAi?: boolean;
+
+  @OneToMany(() => TodoAttachmentEntity, (attachment) => attachment.todo)
+  attachments?: Relation<TodoAttachmentEntity[]>;
 }

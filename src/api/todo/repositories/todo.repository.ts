@@ -41,6 +41,7 @@ export class TodoRepository {
     const query = this.repository
       .createQueryBuilder('todo')
       .leftJoinAndSelect('todo.status', 'status')
+      .leftJoinAndSelect('todo.attachments', 'attachments')
       .leftJoin('todo.project', 'project')
       .leftJoin('project.members', 'member', 'member.user_id = :userId', {
         userId,
@@ -82,6 +83,7 @@ export class TodoRepository {
   findOwnedWithStatus(id: Uuid, userId: Uuid): Promise<TodoEntity | null> {
     return this.createAccessibleTodoQuery(id, userId)
       .leftJoinAndSelect('todo.status', 'detailStatus')
+      .leftJoinAndSelect('todo.attachments', 'detailAttachments')
       .getOne();
   }
 

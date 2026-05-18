@@ -39,6 +39,7 @@
       "@/mail/*": ["src/mail/*"],
       "@/redis/*": ["src/redis/*"],
       "@/shared/*": ["src/shared/*"],
+      "@/storage/*": ["src/storage/*"],
       "@/utils/*": ["src/utils/*"]
     }
   }

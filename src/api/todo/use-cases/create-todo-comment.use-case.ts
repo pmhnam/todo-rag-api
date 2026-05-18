@@ -1,10 +1,11 @@
 import { ProjectAccessService } from '@/api/project/services/project-access.service';
 import { Uuid } from '@/common/types/common.type';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { CreateTodoCommentReqDto } from '../dto/create-todo-comment.req.dto';
 import { TodoCommentResDto } from '../dto/todo-comment.res.dto';
 import { TodoActivityType } from '../enums/todo-activity-type.enum';
+import { TodoAttachmentRepository } from '../repositories/todo-attachment.repository';
 import { TodoCommentRepository } from '../repositories/todo-comment.repository';
 import { TodoActivityService } from '../services/todo-activity.service';
 import { GetTodoDetailUseCase } from './get-todo-detail.use-case';
@@ -16,6 +17,7 @@ export class CreateTodoCommentUseCase {
     private readonly getTodoDetailUseCase: GetTodoDetailUseCase,
     private readonly todoActivityService: TodoActivityService,
     private readonly projectAccessService: ProjectAccessService,
+    private readonly todoAttachmentRepository: TodoAttachmentRepository,
   ) {}
 
   async execute(
@@ -25,15 +27,39 @@ export class CreateTodoCommentUseCase {
   ): Promise<TodoCommentResDto> {
     const todo = await this.getTodoDetailUseCase.getEntity(todoId, userId);
     await this.projectAccessService.assertCanWrite(todo.projectId, userId);
+    const content = reqDto.content?.trim() || '';
+    const attachmentKeys = reqDto.attachmentKeys || [];
+    if (!content && attachmentKeys.length === 0) {
+      throw new BadRequestException('Comment content or image is required');
+    }
+    if (attachmentKeys.length > 0) {
+      const attachments = await this.todoAttachmentRepository.findByStorageKeys(
+        todoId,
+        userId,
+        attachmentKeys,
+      );
+      if (attachments.length !== attachmentKeys.length) {
+        throw new BadRequestException('One or more attachments were not found');
+      }
+    }
+
     const comment = this.todoCommentRepository.create({
       todoId,
       userId,
-      content: reqDto.content.trim(),
+      content,
       createdBy: userId,
       updatedBy: userId,
     });
 
     const saved = await this.todoCommentRepository.save(comment);
+    if (attachmentKeys.length > 0) {
+      saved.attachments = await this.todoAttachmentRepository.attachToComment(
+        todoId,
+        userId,
+        attachmentKeys,
+        saved.id,
+      );
+    }
     this.todoActivityService.record({
       todoId,
       userId,
