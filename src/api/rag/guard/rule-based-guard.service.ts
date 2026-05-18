@@ -45,10 +45,22 @@ export class RuleBasedGuardService {
       /thoi tiet/,
     ];
 
+    const taskCreatePatterns = [
+      /\b(tao|them|create|add)\s+(task|todo|cong viec|viec)\b/,
+    ];
+
     const isTodoLike = todoLikePatterns.some((rule) => rule.test(normalized));
     const isOutOfScope = outOfScopePatterns.some((rule) =>
       rule.test(normalized),
     );
+
+    if (taskCreatePatterns.some((rule) => rule.test(normalized))) {
+      return {
+        intent: AiIntent.TASK_CREATE,
+        confidence: 0.99,
+        reason: 'Matched explicit task creation pattern.',
+      };
+    }
 
     if (isOutOfScope && !isTodoLike) {
       return {

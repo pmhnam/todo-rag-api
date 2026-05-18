@@ -18,10 +18,27 @@ describe('RuleBasedGuardService', () => {
     });
   });
 
-  it.each(['Tạo todo học HTML', 'Nhắc tôi học React'])(
-    'does not block todo-like edge case: %s',
+  it.each(['Tạo todo học HTML', 'Add task to review React SSO flow'])(
+    'classifies explicit task creation: %s',
     (message) => {
-      expect(service.check(message)).toBeNull();
+      expect(service.check(message)).toMatchObject({
+        intent: AiIntent.TASK_CREATE,
+      });
     },
   );
+
+  it('does not block todo-like edge case', () => {
+    expect(service.check('Nhắc tôi học React')).toBeNull();
+  });
+
+  it('classifies explicit task creation with technical content', () => {
+    expect(
+      service.check(
+        'Tạo task để refactor module users, đặt title sao cho hay bằng tiếng anh, viết description là thêm field name và hỗ trợ SSO login',
+      ),
+    ).toMatchObject({
+      intent: AiIntent.TASK_CREATE,
+      confidence: 0.99,
+    });
+  });
 });

@@ -12,6 +12,8 @@ export const INTENT_EXAMPLES: Record<
     'deadline sprint là thứ 6',
     'đừng quên gọi khách hàng',
     'cần follow up issue thanh toán',
+    'tạo task để refactor module users',
+    'tạo task thêm field name và hỗ trợ SSO login',
   ],
   [AiIntent.TASK_UPDATE]: [
     'đổi deadline task deploy sang ngày mai',
