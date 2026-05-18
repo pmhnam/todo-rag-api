@@ -1,3 +1,4 @@
+import { ProjectAccessService } from '@/api/project/services/project-access.service';
 import { Uuid } from '@/common/types/common.type';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
@@ -21,9 +22,14 @@ export class CreateTodoUseCase {
     private readonly todoAiSummaryService: TodoAiSummaryService,
     private readonly todoIndexingService: TodoIndexingService,
     private readonly todoActivityService: TodoActivityService,
+    private readonly projectAccessService: ProjectAccessService,
   ) {}
 
   async execute(userId: Uuid, reqDto: CreateTodoReqDto): Promise<TodoResDto> {
+    await this.projectAccessService.assertCanWrite(
+      reqDto.projectId as Uuid,
+      userId,
+    );
     const status = await this.todoStatusRepository.findOwnedInProject(
       reqDto.statusId as Uuid,
       userId,
@@ -54,7 +60,6 @@ export class CreateTodoUseCase {
       position:
         data.position ??
         (await this.todoRepository.getNextPosition(
-          userId,
           data.projectId as Uuid,
           data.statusId as Uuid,
         )),

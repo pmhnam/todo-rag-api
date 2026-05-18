@@ -1,3 +1,4 @@
+import { ProjectAccessService } from '@/api/project/services/project-access.service';
 import { Uuid } from '@/common/types/common.type';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { Injectable, NotFoundException } from '@nestjs/common';
@@ -12,6 +13,7 @@ export class DeleteTodoUseCase {
     private readonly todoRepository: TodoRepository,
     private readonly todoIndexingService: TodoIndexingService,
     private readonly todoActivityService: TodoActivityService,
+    private readonly projectAccessService: ProjectAccessService,
   ) {}
 
   async execute(id: Uuid, userId: Uuid): Promise<void> {
@@ -20,6 +22,7 @@ export class DeleteTodoUseCase {
     if (!todo) {
       throw new NotFoundException({ errorCode: ErrorCode.E110 });
     }
+    await this.projectAccessService.assertCanWrite(todo.projectId, userId);
 
     this.todoActivityService.record({
       todoId: todo.id,

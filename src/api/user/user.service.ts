@@ -29,7 +29,7 @@ export class UserService {
   ) {}
 
   async create(dto: CreateUserReqDto): Promise<UserResDto> {
-    const { username, email, password, bio, image } = dto;
+    const { name, username, email, password, bio, image } = dto;
 
     // check uniqueness of username/email
     const user = await this.userRepository.findOne({
@@ -48,6 +48,7 @@ export class UserService {
     }
 
     const newUser = new UserEntity({
+      name,
       username,
       email,
       password,
@@ -116,6 +117,7 @@ export class UserService {
 
     user.bio = updateUserDto.bio;
     user.image = updateUserDto.image;
+    user.name = updateUserDto.name;
     user.updatedBy = SYSTEM_USER_ID;
 
     await this.userRepository.save(user);

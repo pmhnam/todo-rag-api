@@ -21,6 +21,10 @@ export class UserResDto {
   @Expose()
   email: string;
 
+  @StringField()
+  @Expose()
+  name: string;
+
   @StringFieldOptional()
   @Expose()
   bio?: string;

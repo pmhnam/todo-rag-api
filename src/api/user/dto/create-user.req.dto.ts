@@ -9,6 +9,9 @@ import { Transform } from 'class-transformer';
 
 export class CreateUserReqDto {
   @StringField()
+  name: string;
+
+  @StringField()
   @Transform(lowerCaseTransformer)
   username: string;
 

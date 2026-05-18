@@ -1,3 +1,4 @@
+import { ProjectAccessService } from '@/api/project/services/project-access.service';
 import { Uuid } from '@/common/types/common.type';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
@@ -22,6 +23,7 @@ export class UpdateTodoUseCase {
     private readonly todoIndexingService: TodoIndexingService,
     private readonly todoJiraSyncService: TodoJiraSyncService,
     private readonly todoActivityService: TodoActivityService,
+    private readonly projectAccessService: ProjectAccessService,
   ) {}
 
   async execute(
@@ -34,6 +36,7 @@ export class UpdateTodoUseCase {
     if (!todo) {
       throw new NotFoundException({ errorCode: ErrorCode.E110 });
     }
+    await this.projectAccessService.assertCanWrite(todo.projectId, userId);
 
     const statusChanged = Boolean(
       reqDto.statusId && reqDto.statusId !== todo.statusId,

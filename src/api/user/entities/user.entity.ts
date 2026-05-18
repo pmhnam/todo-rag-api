@@ -1,5 +1,6 @@
 import type { JiraIntegrationEntity } from '@/api/jira-integration/entities/jira-integration.entity';
 import type { PostEntity } from '@/api/post/entities/post.entity';
+import type { ProjectMemberEntity } from '@/api/project/entities/project-member.entity';
 import type { ProjectEntity } from '@/api/project/entities/project.entity';
 import type { TodoStatusEntity } from '@/api/todo/entities/todo-status.entity';
 import type { TodoEntity } from '@/api/todo/entities/todo.entity';
@@ -43,6 +44,9 @@ export class UserEntity extends AbstractEntity {
   @Index('UQ_user_email', { where: '"deleted_at" IS NULL', unique: true })
   email!: string;
 
+  @Column({ length: 100 })
+  name!: string;
+
   @Column()
   password!: string;
 
@@ -67,6 +71,12 @@ export class UserEntity extends AbstractEntity {
 
   @OneToMany('ProjectEntity', (project: ProjectEntity) => project.user)
   projects: Relation<ProjectEntity[]>;
+
+  @OneToMany(
+    'ProjectMemberEntity',
+    (membership: ProjectMemberEntity) => membership.user,
+  )
+  projectMemberships: Relation<ProjectMemberEntity[]>;
 
   @OneToMany('TodoEntity', (todo: TodoEntity) => todo.user)
   todos: Relation<TodoEntity[]>;

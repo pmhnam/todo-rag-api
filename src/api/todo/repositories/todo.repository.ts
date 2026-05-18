@@ -41,7 +41,11 @@ export class TodoRepository {
     const query = this.repository
       .createQueryBuilder('todo')
       .leftJoinAndSelect('todo.status', 'status')
-      .where('todo.user_id = :userId', { userId })
+      .leftJoin('todo.project', 'project')
+      .leftJoin('project.members', 'member', 'member.user_id = :userId', {
+        userId,
+      })
+      .where('(project.user_id = :userId OR member.id IS NOT NULL)', { userId })
       .andWhere('todo.project_id = :projectId', {
         projectId: reqDto.projectId,
       });
@@ -72,14 +76,26 @@ export class TodoRepository {
   }
 
   findOwnedById(id: Uuid, userId: Uuid): Promise<TodoEntity | null> {
-    return this.repository.findOne({ where: { id, userId } });
+    return this.createAccessibleTodoQuery(id, userId).getOne();
   }
 
   findOwnedWithStatus(id: Uuid, userId: Uuid): Promise<TodoEntity | null> {
-    return this.repository.findOne({
-      where: { id, userId },
-      relations: ['status'],
-    });
+    return this.createAccessibleTodoQuery(id, userId)
+      .leftJoinAndSelect('todo.status', 'detailStatus')
+      .getOne();
+  }
+
+  private createAccessibleTodoQuery(id: Uuid, userId: Uuid) {
+    return this.repository
+      .createQueryBuilder('todo')
+      .leftJoin('todo.project', 'project')
+      .leftJoin('project.members', 'member', 'member.user_id = :userId', {
+        userId,
+      })
+      .where('todo.id = :id', { id })
+      .andWhere('(project.user_id = :userId OR member.id IS NOT NULL)', {
+        userId,
+      });
   }
 
   findOwnedForAgent(
@@ -94,7 +110,11 @@ export class TodoRepository {
     const query = this.repository
       .createQueryBuilder('todo')
       .leftJoinAndSelect('todo.status', 'status')
-      .where('todo.user_id = :userId', { userId })
+      .leftJoin('todo.project', 'project')
+      .leftJoin('project.members', 'member', 'member.user_id = :userId', {
+        userId,
+      })
+      .where('(project.user_id = :userId OR member.id IS NOT NULL)', { userId })
       .orderBy('todo.updatedAt', 'DESC')
       .take(10);
 
@@ -135,7 +155,13 @@ export class TodoRepository {
   }> {
     const baseQuery = this.repository
       .createQueryBuilder('todo')
-      .where('todo.user_id = :userId', { userId });
+      .leftJoin('todo.project', 'project')
+      .leftJoin('project.members', 'member', 'member.user_id = :userId', {
+        userId,
+      })
+      .where('(project.user_id = :userId OR member.id IS NOT NULL)', {
+        userId,
+      });
 
     if (params.projectId) {
       baseQuery.andWhere('todo.project_id = :projectId', {
@@ -207,7 +233,12 @@ export class TodoRepository {
       .createQueryBuilder('todo')
       .leftJoin('todo.status', 'status')
       .leftJoin('todo.project', 'project')
-      .where('todo.user_id = :userId', { userId });
+      .leftJoin('project.members', 'member', 'member.user_id = :userId', {
+        userId,
+      })
+      .where('(project.user_id = :userId OR member.id IS NOT NULL)', {
+        userId,
+      });
 
     if (params.projectId) {
       query.andWhere('todo.project_id = :projectId', {
@@ -321,15 +352,14 @@ export class TodoRepository {
 
   findOwnedByIds(ids: Uuid[], userId: Uuid): Promise<TodoEntity[]> {
     if (ids.length === 0) return Promise.resolve([]);
-    return this.repository.find({ where: { id: In(ids), userId } });
+    return this.repository.find({ where: { id: In(ids) } });
   }
 
-  async getNextPosition(userId: Uuid, projectId: Uuid, statusId: Uuid) {
+  async getNextPosition(projectId: Uuid, statusId: Uuid) {
     const result = await this.repository
       .createQueryBuilder('todo')
       .select('COALESCE(MAX(todo.position), -1)', 'maxPosition')
-      .where('todo.user_id = :userId', { userId })
-      .andWhere('todo.project_id = :projectId', { projectId })
+      .where('todo.project_id = :projectId', { projectId })
       .andWhere('todo.status_id = :statusId', { statusId })
       .getRawOne<{ maxPosition: string }>();
 

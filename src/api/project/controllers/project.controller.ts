@@ -18,8 +18,12 @@ import {
 } from '@nestjs/common';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { CreateProjectReqDto } from '../dto/create-project.req.dto';
+import { InviteProjectMemberReqDto } from '../dto/invite-project-member.req.dto';
+import { ProjectMemberResDto } from '../dto/project-member.res.dto';
 import { ProjectResDto } from '../dto/project.res.dto';
+import { UpdateProjectMemberReqDto } from '../dto/update-project-member.req.dto';
 import { UpdateProjectReqDto } from '../dto/update-project.req.dto';
+import { ProjectMemberService } from '../services/project-member.service';
 import { ProjectService } from '../services/project.service';
 
 @ApiTags('projects')
@@ -28,7 +32,10 @@ import { ProjectService } from '../services/project.service';
   version: '1',
 })
 export class ProjectController {
-  constructor(private readonly projectService: ProjectService) {}
+  constructor(
+    private readonly projectService: ProjectService,
+    private readonly projectMemberService: ProjectMemberService,
+  ) {}
 
   @Get()
   @ApiAuth({
@@ -94,5 +101,56 @@ export class ProjectController {
     @Param('id', ParseUUIDPipe) id: Uuid,
   ): Promise<void> {
     return this.projectService.delete(id, userId);
+  }
+
+  @Get(':id/members')
+  @ApiAuth({ type: ProjectMemberResDto, summary: 'List project members' })
+  @ApiParam({ name: 'id', type: 'String' })
+  async findMembers(
+    @CurrentUser('id') userId: Uuid,
+    @Param('id', ParseUUIDPipe) id: Uuid,
+  ): Promise<ProjectMemberResDto[]> {
+    return this.projectMemberService.findAll(id, userId);
+  }
+
+  @Post(':id/members')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiAuth({
+    type: ProjectMemberResDto,
+    summary: 'Invite a user to collaborate on a project',
+    statusCode: HttpStatus.CREATED,
+  })
+  @ApiParam({ name: 'id', type: 'String' })
+  async inviteMember(
+    @CurrentUser('id') userId: Uuid,
+    @Param('id', ParseUUIDPipe) id: Uuid,
+    @Body() reqDto: InviteProjectMemberReqDto,
+  ): Promise<ProjectMemberResDto> {
+    return this.projectMemberService.invite(id, userId, reqDto);
+  }
+
+  @Patch(':id/members/:memberId')
+  @ApiAuth({ type: ProjectMemberResDto, summary: 'Update project member' })
+  @ApiParam({ name: 'id', type: 'String' })
+  @ApiParam({ name: 'memberId', type: 'String' })
+  async updateMember(
+    @CurrentUser('id') userId: Uuid,
+    @Param('id', ParseUUIDPipe) id: Uuid,
+    @Param('memberId', ParseUUIDPipe) memberId: Uuid,
+    @Body() reqDto: UpdateProjectMemberReqDto,
+  ): Promise<ProjectMemberResDto> {
+    return this.projectMemberService.update(id, memberId, userId, reqDto);
+  }
+
+  @Delete(':id/members/:memberId')
+  @ApiAuth({ summary: 'Remove project member' })
+  @ApiParam({ name: 'id', type: 'String' })
+  @ApiParam({ name: 'memberId', type: 'String' })
+  async removeMember(
+    @CurrentUser('id') userId: Uuid,
+    @Param('id', ParseUUIDPipe) id: Uuid,
+    @Param('memberId', ParseUUIDPipe) memberId: Uuid,
+  ): Promise<void> {
+    return this.projectMemberService.remove(id, memberId, userId);
   }
 }

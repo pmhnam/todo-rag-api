@@ -1,3 +1,4 @@
+import { ProjectAccessService } from '@/api/project/services/project-access.service';
 import { Uuid } from '@/common/types/common.type';
 import { Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
@@ -14,6 +15,7 @@ export class CreateTodoCommentUseCase {
     private readonly todoCommentRepository: TodoCommentRepository,
     private readonly getTodoDetailUseCase: GetTodoDetailUseCase,
     private readonly todoActivityService: TodoActivityService,
+    private readonly projectAccessService: ProjectAccessService,
   ) {}
 
   async execute(
@@ -21,7 +23,8 @@ export class CreateTodoCommentUseCase {
     userId: Uuid,
     reqDto: CreateTodoCommentReqDto,
   ): Promise<TodoCommentResDto> {
-    await this.getTodoDetailUseCase.getEntity(todoId, userId);
+    const todo = await this.getTodoDetailUseCase.getEntity(todoId, userId);
+    await this.projectAccessService.assertCanWrite(todo.projectId, userId);
     const comment = this.todoCommentRepository.create({
       todoId,
       userId,

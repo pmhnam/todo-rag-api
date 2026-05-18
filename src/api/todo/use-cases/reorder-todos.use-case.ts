@@ -1,3 +1,4 @@
+import { ProjectAccessService } from '@/api/project/services/project-access.service';
 import { Uuid } from '@/common/types/common.type';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
@@ -11,10 +12,12 @@ export class ReorderTodosUseCase {
   constructor(
     private readonly todoRepository: TodoRepository,
     private readonly todoStatusRepository: TodoStatusRepository,
+    private readonly projectAccessService: ProjectAccessService,
   ) {}
 
   async execute(userId: Uuid, reqDto: ReorderTodosReqDto): Promise<void> {
     const projectId = reqDto.projectId as Uuid;
+    await this.projectAccessService.assertCanWrite(projectId, userId);
     const columns = reqDto.columns || [];
     const statusIds = columns.map((column) => column.statusId as Uuid);
 

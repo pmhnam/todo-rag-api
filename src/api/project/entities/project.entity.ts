@@ -13,6 +13,7 @@ import {
   PrimaryGeneratedColumn,
   Relation,
 } from 'typeorm';
+import { ProjectMemberEntity } from './project-member.entity';
 
 @Entity('project')
 export class ProjectEntity extends AbstractEntity {
@@ -46,6 +47,9 @@ export class ProjectEntity extends AbstractEntity {
 
   @OneToMany(() => TodoEntity, (todo) => todo.project)
   todos: Relation<TodoEntity[]>;
+
+  @OneToMany(() => ProjectMemberEntity, (member) => member.project)
+  members: Relation<ProjectMemberEntity[]>;
 
   @Column({ name: 'settings', type: 'jsonb', nullable: true })
   settings?: Record<string, any>;

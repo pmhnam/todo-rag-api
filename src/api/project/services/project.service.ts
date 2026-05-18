@@ -2,19 +2,22 @@ import { PageOptionsDto } from '@/common/dto/offset-pagination/page-options.dto'
 import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { Uuid } from '@/common/types/common.type';
 import { paginate } from '@/utils/offset-pagination';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateProjectReqDto } from '../dto/create-project.req.dto';
 import { ProjectResDto } from '../dto/project.res.dto';
 import { UpdateProjectReqDto } from '../dto/update-project.req.dto';
 import { ProjectEntity } from '../entities/project.entity';
+import { ProjectMemberPermission } from '../enums/project-member-permission.enum';
+import { ProjectAccessService } from './project-access.service';
 
 @Injectable()
 export class ProjectService {
   constructor(
     @InjectRepository(ProjectEntity)
     private readonly projectRepository: Repository<ProjectEntity>,
+    private readonly projectAccessService: ProjectAccessService,
   ) {}
 
   async findAll(
@@ -23,7 +26,13 @@ export class ProjectService {
   ): Promise<OffsetPaginatedDto<ProjectResDto>> {
     const queryBuilder = this.projectRepository
       .createQueryBuilder('project')
-      .where('project.userId = :userId', { userId })
+      .leftJoinAndSelect(
+        'project.members',
+        'member',
+        'member.user_id = :userId',
+        { userId },
+      )
+      .where('project.userId = :userId OR member.id IS NOT NULL', { userId })
       .orderBy('project.createdAt', reqDto.order);
 
     if (reqDto.q) {
@@ -40,19 +49,20 @@ export class ProjectService {
     );
 
     return new OffsetPaginatedDto(
-      entities.map((entity) => new ProjectResDto(entity)),
+      entities.map(
+        (entity) =>
+          new ProjectResDto(entity, {
+            isOwner: entity.userId === userId,
+            permission: this.getPermission(entity, userId),
+          }),
+      ),
       metaDto,
     );
   }
 
   async findOne(id: Uuid, userId: Uuid): Promise<ProjectResDto> {
-    const project = await this.projectRepository.findOne({
-      where: { id, userId },
-    });
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
-    return new ProjectResDto(project);
+    const access = await this.projectAccessService.assertCanRead(id, userId);
+    return new ProjectResDto(access.project, access);
   }
 
   async create(
@@ -74,24 +84,24 @@ export class ProjectService {
     userId: Uuid,
     reqDto: UpdateProjectReqDto,
   ): Promise<ProjectResDto> {
-    const project = await this.projectRepository.findOne({
-      where: { id, userId },
-    });
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
+    const access = await this.projectAccessService.assertCanWrite(id, userId);
+    const project = access.project;
     Object.assign(project, reqDto);
+    project.updatedBy = userId;
     const updatedProject = await this.projectRepository.save(project);
-    return new ProjectResDto(updatedProject);
+    return new ProjectResDto(updatedProject, access);
   }
 
   async delete(id: Uuid, userId: Uuid): Promise<void> {
-    const project = await this.projectRepository.findOne({
-      where: { id, userId },
-    });
-    if (!project) {
-      throw new NotFoundException('Project not found');
+    const access = await this.projectAccessService.assertOwner(id, userId);
+    await this.projectRepository.softRemove(access.project);
+  }
+
+  private getPermission(project: ProjectEntity, userId: Uuid) {
+    if (project.userId === userId) {
+      return ProjectMemberPermission.WRITE_INVITE;
     }
-    await this.projectRepository.softRemove(project);
+    const member = project.members?.find((item) => item.userId === userId);
+    return member?.permission ?? ProjectMemberPermission.READ;
   }
 }

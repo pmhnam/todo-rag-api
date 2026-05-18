@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JiraIntegrationModule } from '../jira-integration/jira-integration.module';
+import { ProjectModule } from '../project/project.module';
 import { RagCoreModule } from '../rag/rag-core.module';
 import { TodoActivityController } from './controllers/todo-activity.controller';
 import { TodoCommentController } from './controllers/todo-comment.controller';
@@ -52,6 +53,7 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
     ]),
     RagCoreModule,
     JiraIntegrationModule,
+    ProjectModule,
   ],
   controllers: [
     TodoController,

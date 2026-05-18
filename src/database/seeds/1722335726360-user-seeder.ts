@@ -16,6 +16,7 @@ export class UserSeeder1722335726360 implements Seeder {
     if (!adminUser) {
       await repository.insert(
         new UserEntity({
+          name: 'Admin',
           username: 'admin',
           email: 'admin@example.com',
           password: '12345678',

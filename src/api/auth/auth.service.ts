@@ -110,6 +110,7 @@ export class AuthService {
 
     // Register user
     const user = new UserEntity({
+      name: dto.name,
       email: dto.email,
       password: dto.password,
       createdBy: SYSTEM_USER_ID,

@@ -1,3 +1,4 @@
+import { ProjectAccessService } from '@/api/project/services/project-access.service';
 import { Uuid } from '@/common/types/common.type';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { Injectable, NotFoundException } from '@nestjs/common';
@@ -8,7 +9,10 @@ import { TodoStatusRepository } from '../repositories/todo-status.repository';
 
 @Injectable()
 export class UpdateTodoStatusUseCase {
-  constructor(private readonly todoStatusRepository: TodoStatusRepository) {}
+  constructor(
+    private readonly todoStatusRepository: TodoStatusRepository,
+    private readonly projectAccessService: ProjectAccessService,
+  ) {}
 
   async execute(
     id: Uuid,
@@ -20,6 +24,7 @@ export class UpdateTodoStatusUseCase {
     if (!status) {
       throw new NotFoundException({ errorCode: ErrorCode.E100 });
     }
+    await this.projectAccessService.assertCanWrite(status.projectId, userId);
 
     Object.assign(status, reqDto);
     status.updatedBy = userId;

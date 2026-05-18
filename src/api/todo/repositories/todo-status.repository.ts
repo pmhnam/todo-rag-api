@@ -3,7 +3,7 @@ import { Uuid } from '@/common/types/common.type';
 import { paginate } from '@/utils/offset-pagination';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ListTodoStatusReqDto } from '../dto/list-todo-status.req.dto';
 import { TodoStatusEntity } from '../entities/todo-status.entity';
 
@@ -20,7 +20,11 @@ export class TodoStatusRepository {
   ): Promise<[TodoStatusEntity[], OffsetPaginationDto]> {
     const query = this.repository
       .createQueryBuilder('status')
-      .where('status.user_id = :userId', { userId })
+      .leftJoin('status.project', 'project')
+      .leftJoin('project.members', 'member', 'member.user_id = :userId', {
+        userId,
+      })
+      .where('(project.user_id = :userId OR member.id IS NOT NULL)', { userId })
       .andWhere('status.project_id = :projectId', {
         projectId: reqDto.projectId,
       })
@@ -34,14 +38,26 @@ export class TodoStatusRepository {
   }
 
   findOwnedById(id: Uuid, userId: Uuid): Promise<TodoStatusEntity | null> {
-    return this.repository.findOne({ where: { id, userId } });
+    return this.createAccessibleStatusQuery(id, userId).getOne();
   }
 
   findOwnedWithTodos(id: Uuid, userId: Uuid): Promise<TodoStatusEntity | null> {
-    return this.repository.findOne({
-      where: { id, userId },
-      relations: ['todos'],
-    });
+    return this.createAccessibleStatusQuery(id, userId)
+      .leftJoinAndSelect('status.todos', 'todos')
+      .getOne();
+  }
+
+  private createAccessibleStatusQuery(id: Uuid, userId: Uuid) {
+    return this.repository
+      .createQueryBuilder('status')
+      .leftJoin('status.project', 'project')
+      .leftJoin('project.members', 'member', 'member.user_id = :userId', {
+        userId,
+      })
+      .where('status.id = :id', { id })
+      .andWhere('(project.user_id = :userId OR member.id IS NOT NULL)', {
+        userId,
+      });
   }
 
   findOwnedInProject(
@@ -49,7 +65,7 @@ export class TodoStatusRepository {
     userId: Uuid,
     projectId: Uuid,
   ): Promise<TodoStatusEntity | null> {
-    return this.repository.findOne({ where: { id, userId, projectId } });
+    return this.repository.findOne({ where: { id, projectId } });
   }
 
   findByNameInProject(
@@ -57,11 +73,20 @@ export class TodoStatusRepository {
     projectId: Uuid,
     name: string,
   ): Promise<TodoStatusEntity[]> {
-    return this.repository.find({
-      where: { userId, projectId, name: ILike(`%${name}%`) },
-      take: 5,
-      order: { order: 'ASC' },
-    });
+    return this.repository
+      .createQueryBuilder('status')
+      .leftJoin('status.project', 'project')
+      .leftJoin('project.members', 'member', 'member.user_id = :userId', {
+        userId,
+      })
+      .where('status.project_id = :projectId', { projectId })
+      .andWhere('status.name ILIKE :name', { name: `%${name}%` })
+      .andWhere('(project.user_id = :userId OR member.id IS NOT NULL)', {
+        userId,
+      })
+      .orderBy('status.order', 'ASC')
+      .take(5)
+      .getMany();
   }
 
   create(data: Partial<TodoStatusEntity>): TodoStatusEntity {

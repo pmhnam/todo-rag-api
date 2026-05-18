@@ -46,6 +46,7 @@ describe('UserController', () => {
   describe('createUser', () => {
     it('should return a user', async () => {
       const createUserReqDto = {
+        name: 'John Doe',
         username: 'john',
         email: 'mail@example.com',
         password: 'password',
@@ -55,6 +56,7 @@ describe('UserController', () => {
 
       const userResDto = new UserResDto();
       userResDto.id = '1';
+      userResDto.name = 'John Doe';
       userResDto.username = 'john';
       userResDto.email = 'mail@example.com';
       userResDto.bio = 'bio';
@@ -85,6 +87,7 @@ describe('UserController', () => {
 
       beforeEach(() => {
         createUserReqDto = plainToInstance(CreateUserReqDto, {
+          name: 'John Doe',
           username: 'john',
           email: 'mail@example.com',
           password: 'password',
