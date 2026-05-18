@@ -7,6 +7,7 @@ import { ListTodoReqDto } from '../dto/list-todo.req.dto';
 import { ReorderTodosReqDto } from '../dto/reorder-todos.req.dto';
 import { TodoResDto } from '../dto/todo.res.dto';
 import { UpdateTodoReqDto } from '../dto/update-todo.req.dto';
+import { ArchiveTodoUseCase } from '../use-cases/archive-todo.use-case';
 import { CreateTodoUseCase } from '../use-cases/create-todo.use-case';
 import { DeleteTodoUseCase } from '../use-cases/delete-todo.use-case';
 import { FindTodosUseCase } from '../use-cases/find-todos.use-case';
@@ -25,6 +26,7 @@ export class TodoService {
     private readonly linkJiraIssueUseCase: LinkJiraIssueUseCase,
     private readonly deleteTodoUseCase: DeleteTodoUseCase,
     private readonly reorderTodosUseCase: ReorderTodosUseCase,
+    private readonly archiveTodoUseCase: ArchiveTodoUseCase,
   ) {}
 
   findMany(
@@ -68,5 +70,13 @@ export class TodoService {
 
   reorder(userId: Uuid, reqDto: ReorderTodosReqDto): Promise<void> {
     return this.reorderTodosUseCase.execute(userId, reqDto);
+  }
+
+  archive(id: Uuid, userId: Uuid): Promise<TodoResDto> {
+    return this.archiveTodoUseCase.archive(id, userId);
+  }
+
+  unarchive(id: Uuid, userId: Uuid): Promise<TodoResDto> {
+    return this.archiveTodoUseCase.unarchive(id, userId);
   }
 }

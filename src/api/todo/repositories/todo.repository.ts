@@ -69,6 +69,12 @@ export class TodoRepository {
       });
     }
 
+    if (reqDto.archived) {
+      query.andWhere('todo.archived_at IS NOT NULL');
+    } else {
+      query.andWhere('todo.archived_at IS NULL');
+    }
+
     if (reqDto.q) {
       query.andWhere('todo.title ILIKE :q', { q: `%${reqDto.q}%` });
     }
@@ -117,6 +123,7 @@ export class TodoRepository {
         userId,
       })
       .where('(project.user_id = :userId OR member.id IS NOT NULL)', { userId })
+      .andWhere('todo.archived_at IS NULL')
       .orderBy('todo.updatedAt', 'DESC')
       .take(10);
 
@@ -163,7 +170,8 @@ export class TodoRepository {
       })
       .where('(project.user_id = :userId OR member.id IS NOT NULL)', {
         userId,
-      });
+      })
+      .andWhere('todo.archived_at IS NULL');
 
     if (params.projectId) {
       baseQuery.andWhere('todo.project_id = :projectId', {
@@ -240,7 +248,8 @@ export class TodoRepository {
       })
       .where('(project.user_id = :userId OR member.id IS NOT NULL)', {
         userId,
-      });
+      })
+      .andWhere('todo.archived_at IS NULL');
 
     if (params.projectId) {
       query.andWhere('todo.project_id = :projectId', {
@@ -363,6 +372,7 @@ export class TodoRepository {
       .select('COALESCE(MAX(todo.position), -1)', 'maxPosition')
       .where('todo.project_id = :projectId', { projectId })
       .andWhere('todo.status_id = :statusId', { statusId })
+      .andWhere('todo.archived_at IS NULL')
       .getRawOne<{ maxPosition: string }>();
 
     return Number(result?.maxPosition ?? -1) + 1;

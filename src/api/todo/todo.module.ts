@@ -25,6 +25,7 @@ import { TodoIndexingService } from './services/todo-indexing.service';
 import { TodoJiraSyncService } from './services/todo-jira-sync.service';
 import { TodoStatusService } from './services/todo-status.service';
 import { TodoService } from './services/todo.service';
+import { ArchiveTodoUseCase } from './use-cases/archive-todo.use-case';
 import { CompleteTodoAttachmentUseCase } from './use-cases/complete-todo-attachment.use-case';
 import { CountTasksUseCase } from './use-cases/count-tasks.use-case';
 import { CreateTodoCommentUseCase } from './use-cases/create-todo-comment.use-case';
@@ -83,6 +84,7 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
     TodoAiSummaryService,
     TodoIndexingService,
     TodoJiraSyncService,
+    ArchiveTodoUseCase,
     FindTodosUseCase,
     GetTodoDetailUseCase,
     CreateTodoUseCase,
@@ -110,6 +112,7 @@ import { UpdateTodoUseCase } from './use-cases/update-todo.use-case';
   ],
   exports: [
     TodoStatusService,
+    ArchiveTodoUseCase,
     FindTodosUseCase,
     GetTodoDetailUseCase,
     CreateTodoUseCase,

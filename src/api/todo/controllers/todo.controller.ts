@@ -125,6 +125,32 @@ export class TodoController {
     return this.todoService.linkJiraIssue(id, userId, reqDto);
   }
 
+  @Patch(':id/archive')
+  @ApiAuth({
+    type: TodoResDto,
+    summary: 'Archive a todo',
+  })
+  @ApiParam({ name: 'id', type: 'String' })
+  async archive(
+    @CurrentUser('id') userId: Uuid,
+    @Param('id', ParseUUIDPipe) id: Uuid,
+  ): Promise<TodoResDto> {
+    return this.todoService.archive(id, userId);
+  }
+
+  @Patch(':id/unarchive')
+  @ApiAuth({
+    type: TodoResDto,
+    summary: 'Restore an archived todo',
+  })
+  @ApiParam({ name: 'id', type: 'String' })
+  async unarchive(
+    @CurrentUser('id') userId: Uuid,
+    @Param('id', ParseUUIDPipe) id: Uuid,
+  ): Promise<TodoResDto> {
+    return this.todoService.unarchive(id, userId);
+  }
+
   @Delete(':id')
   @ApiAuth({
     summary: 'Soft delete a todo',

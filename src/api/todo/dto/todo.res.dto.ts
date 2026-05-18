@@ -100,6 +100,14 @@ export class TodoResDto {
   @Expose()
   generatedByAi?: boolean;
 
+  @DateFieldOptional()
+  @Expose()
+  archivedAt?: Date;
+
+  @StringFieldOptional()
+  @Expose()
+  archivedBy?: string;
+
   @ClassFieldOptional(() => TodoAttachmentResDto, { each: true })
   @Expose()
   attachments?: WrapperType<TodoAttachmentResDto[]>;

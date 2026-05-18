@@ -1,5 +1,6 @@
 import { PageOptionsDto } from '@/common/dto/offset-pagination/page-options.dto';
 import {
+  BooleanFieldOptional,
   EnumFieldOptional,
   UUIDField,
   UUIDFieldOptional,
@@ -19,4 +20,7 @@ export class ListTodoReqDto extends PageOptionsDto {
 
   @EnumFieldOptional(() => JiraSyncStatus, { enumName: 'JiraSyncStatus' })
   readonly jiraSyncStatus?: JiraSyncStatus;
+
+  @BooleanFieldOptional({ description: 'When true, return archived tasks' })
+  readonly archived?: boolean;
 }

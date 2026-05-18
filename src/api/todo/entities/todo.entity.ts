@@ -127,6 +127,12 @@ export class TodoEntity extends AbstractEntity {
   })
   generatedByAi?: boolean;
 
+  @Column({ name: 'archived_at', type: 'timestamptz', nullable: true })
+  archivedAt?: Date;
+
+  @Column({ name: 'archived_by', type: 'varchar', nullable: true })
+  archivedBy?: string;
+
   @OneToMany(() => TodoAttachmentEntity, (attachment) => attachment.todo)
   attachments?: Relation<TodoAttachmentEntity[]>;
 }
