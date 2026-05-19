@@ -1,4 +1,5 @@
 import {
+  ClassField,
   DateField,
   EnumField,
   StringField,
@@ -6,6 +7,7 @@ import {
 } from '@/decorators/field.decorators';
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose } from 'class-transformer';
+import { UserResDto } from '../../user/dto/user.res.dto';
 import { TodoActivityType } from '../enums/todo-activity-type.enum';
 
 @Exclude()
@@ -21,6 +23,10 @@ export class TodoActivityResDto {
   @UUIDField()
   @Expose()
   userId: string;
+
+  @ClassField(() => UserResDto)
+  @Expose()
+  user?: UserResDto;
 
   @EnumField(() => TodoActivityType, { enumName: 'TodoActivityType' })
   @Expose()

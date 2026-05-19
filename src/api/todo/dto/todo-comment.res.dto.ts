@@ -1,10 +1,12 @@
 import {
+  ClassField,
   ClassFieldOptional,
   DateField,
   StringField,
   UUIDField,
 } from '@/decorators/field.decorators';
 import { Exclude, Expose } from 'class-transformer';
+import { UserResDto } from '../../user/dto/user.res.dto';
 import { TodoAttachmentResDto } from './todo-attachment.res.dto';
 
 @Exclude()
@@ -20,6 +22,10 @@ export class TodoCommentResDto {
   @UUIDField()
   @Expose()
   userId: string;
+
+  @ClassField(() => UserResDto)
+  @Expose()
+  user?: UserResDto;
 
   @StringField()
   @Expose()

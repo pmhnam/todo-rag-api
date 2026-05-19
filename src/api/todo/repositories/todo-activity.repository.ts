@@ -14,6 +14,7 @@ export class TodoActivityRepository {
   findManyByTodo(todoId: Uuid): Promise<TodoActivityEntity[]> {
     return this.repository.find({
       where: { todoId },
+      relations: { user: true },
       order: { createdAt: 'DESC' },
       take: 100,
     });

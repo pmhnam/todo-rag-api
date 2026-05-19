@@ -53,13 +53,21 @@ export class CreateTodoCommentUseCase {
 
     const saved = await this.todoCommentRepository.save(comment);
     if (attachmentKeys.length > 0) {
-      saved.attachments = await this.todoAttachmentRepository.attachToComment(
+      await this.todoAttachmentRepository.attachToComment(
         todoId,
         userId,
         attachmentKeys,
         saved.id,
       );
     }
+
+    // Refetch to get user and newly attached attachments
+    const refetched = await this.todoCommentRepository.findOwnedById(
+      saved.id,
+      todoId,
+      userId,
+    );
+
     this.todoActivityService.record({
       todoId,
       userId,
@@ -67,6 +75,6 @@ export class CreateTodoCommentUseCase {
       message: 'Added a comment',
       metadata: { commentId: saved.id },
     });
-    return plainToInstance(TodoCommentResDto, saved);
+    return plainToInstance(TodoCommentResDto, refetched);
   }
 }

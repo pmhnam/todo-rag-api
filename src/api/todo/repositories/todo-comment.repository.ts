@@ -14,7 +14,7 @@ export class TodoCommentRepository {
   findManyByTodo(todoId: Uuid): Promise<TodoCommentEntity[]> {
     return this.repository.find({
       where: { todoId },
-      relations: { attachments: true },
+      relations: { attachments: true, user: true },
       order: { createdAt: 'ASC' },
     });
   }
@@ -24,7 +24,10 @@ export class TodoCommentRepository {
     todoId: Uuid,
     userId: Uuid,
   ): Promise<TodoCommentEntity | null> {
-    return this.repository.findOne({ where: { id, todoId, userId } });
+    return this.repository.findOne({
+      where: { id, todoId, userId },
+      relations: { user: true, attachments: true },
+    });
   }
 
   create(data: Partial<TodoCommentEntity>): TodoCommentEntity {
