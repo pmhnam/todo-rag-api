@@ -1,4 +1,8 @@
-import { IEmailJob, IVerifyEmailJob } from '@/common/interfaces/job.interface';
+import {
+  IEmailJob,
+  IResetPasswordJob,
+  IVerifyEmailJob,
+} from '@/common/interfaces/job.interface';
 import { JobName, QueueName } from '@/constants/job.constant';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
@@ -28,13 +32,17 @@ export class EmailProcessor extends WorkerHost {
     _token?: string,
   ): Promise<any> {
     this.logger.debug(
-      `Processing job ${job.id} of type ${job.name} with data ${JSON.stringify(job.data)}...`,
+      `Processing job ${job.id} of type ${job.name} for ${job.data.email}...`,
     );
 
     switch (job.name) {
       case JobName.EMAIL_VERIFICATION:
         return await this.emailQueueService.sendEmailVerification(
           job.data as unknown as IVerifyEmailJob,
+        );
+      case JobName.PASSWORD_RESET:
+        return await this.emailQueueService.sendPasswordReset(
+          job.data as unknown as IResetPasswordJob,
         );
       default:
         throw new Error(`Unknown job name: ${job.name}`);

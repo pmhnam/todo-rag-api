@@ -1,14 +1,18 @@
 import { CurrentUser } from '@/decorators/current-user.decorator';
 import { ApiAuth, ApiPublic } from '@/decorators/http.decorators';
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { ForgotPasswordReqDto } from './dto/forgot-password.req.dto';
 import { LoginReqDto } from './dto/login.req.dto';
 import { LoginResDto } from './dto/login.res.dto';
 import { RefreshReqDto } from './dto/refresh.req.dto';
 import { RefreshResDto } from './dto/refresh.res.dto';
 import { RegisterReqDto } from './dto/register.req.dto';
 import { RegisterResDto } from './dto/register.res.dto';
+import { ResendVerifyEmailReqDto } from './dto/resend-verify-email.req.dto';
+import { ResetPasswordReqDto } from './dto/reset-password.req.dto';
+import { VerifyForgotPasswordReqDto } from './dto/verify-forgot-password.req.dto';
 import { JwtPayloadType } from './types/jwt-payload.type';
 
 @ApiTags('auth')
@@ -54,31 +58,31 @@ export class AuthController {
 
   @ApiPublic()
   @Post('forgot-password')
-  async forgotPassword() {
-    return 'forgot-password';
+  async forgotPassword(@Body() dto: ForgotPasswordReqDto) {
+    return this.authService.forgotPassword(dto.email);
   }
 
   @ApiPublic()
   @Post('verify/forgot-password')
-  async verifyForgotPassword() {
-    return 'verify-forgot-password';
+  async verifyForgotPassword(@Body() dto: VerifyForgotPasswordReqDto) {
+    return this.authService.verifyForgotPassword(dto.token);
   }
 
   @ApiPublic()
   @Post('reset-password')
-  async resetPassword() {
-    return 'reset-password';
+  async resetPassword(@Body() dto: ResetPasswordReqDto) {
+    return this.authService.resetPassword(dto);
   }
 
   @ApiPublic()
   @Get('verify/email')
-  async verifyEmail() {
-    return 'verify-email';
+  async verifyEmail(@Query('token') token: string) {
+    return this.authService.verifyEmail(token);
   }
 
   @ApiPublic()
   @Post('verify/email/resend')
-  async resendVerifyEmail() {
-    return 'resend-verify-email';
+  async resendVerifyEmail(@Body() dto: ResendVerifyEmailReqDto) {
+    return this.authService.resendVerifyEmail(dto.email);
   }
 }

@@ -1,4 +1,9 @@
-import { IEmailJob, IVerifyEmailJob } from '@/common/interfaces/job.interface';
+import {
+  IEmailJob,
+  IResetPasswordJob,
+  IVerifyEmailJob,
+} from '@/common/interfaces/job.interface';
+import { Uuid } from '@/common/types/common.type';
 import { Branded } from '@/common/types/types';
 import { AllConfigType } from '@/config/config.type';
 import { SYSTEM_USER_ID } from '@/constants/app.constant';
@@ -10,7 +15,12 @@ import { createCacheKey } from '@/utils/cache.util';
 import { verifyPassword } from '@/utils/password.util';
 import { InjectQueue } from '@nestjs/bullmq';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -29,6 +39,7 @@ import { RefreshReqDto } from './dto/refresh.req.dto';
 import { RefreshResDto } from './dto/refresh.res.dto';
 import { RegisterReqDto } from './dto/register.req.dto';
 import { RegisterResDto } from './dto/register.res.dto';
+import { ResetPasswordReqDto } from './dto/reset-password.req.dto';
 import { JwtPayloadType } from './types/jwt-payload.type';
 import { JwtRefreshPayloadType } from './types/jwt-refresh-payload.type';
 
@@ -119,31 +130,137 @@ export class AuthService {
 
     await user.save();
 
-    // Send email verification
-    const token = await this.createVerificationToken({ id: user.id });
-    const tokenExpiresIn = this.configService.getOrThrow(
-      'auth.confirmEmailExpires',
-      {
-        infer: true,
-      },
-    );
-    await this.cacheManager.set(
-      createCacheKey(CacheKey.EMAIL_VERIFICATION, user.id),
-      token,
-      ms(tokenExpiresIn),
-    );
-    await this.emailQueue.add(
-      JobName.EMAIL_VERIFICATION,
-      {
-        email: dto.email,
-        token,
-      } as IVerifyEmailJob,
-      { attempts: 3, backoff: { type: 'exponential', delay: 60000 } },
-    );
+    await this.enqueueEmailVerification(user);
 
     return plainToInstance(RegisterResDto, {
       userId: user.id,
     });
+  }
+
+  async verifyEmail(token: string): Promise<{ success: true }> {
+    const { id } = this.verifyEmailToken(token);
+    const user = await this.userRepository.findOneBy({ id });
+
+    if (!user) {
+      throw new BadRequestException('Invalid verification token');
+    }
+
+    if (user.emailVerifiedAt) {
+      return { success: true };
+    }
+
+    const cachedToken = await this.cacheManager.get<string>(
+      createCacheKey(CacheKey.EMAIL_VERIFICATION, user.id),
+    );
+    if (cachedToken !== token) {
+      throw new BadRequestException('Invalid verification token');
+    }
+
+    user.emailVerifiedAt = new Date();
+    user.updatedBy = SYSTEM_USER_ID;
+    await this.userRepository.save(user);
+    await this.cacheManager.del(
+      createCacheKey(CacheKey.EMAIL_VERIFICATION, user.id),
+    );
+
+    return { success: true };
+  }
+
+  async resendVerifyEmail(email: string): Promise<{ success: true }> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user || user.emailVerifiedAt) {
+      return { success: true };
+    }
+
+    await this.enqueueEmailVerification(user);
+    return { success: true };
+  }
+
+  async forgotPassword(email: string): Promise<{ success: true }> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      return { success: true };
+    }
+
+    const token = await this.createForgotPasswordToken({ id: user.id });
+    const tokenExpiresIn = this.configService.getOrThrow('auth.forgotExpires', {
+      infer: true,
+    });
+    await this.cacheManager.set(
+      createCacheKey(CacheKey.PASSWORD_RESET, user.id),
+      token,
+      ms(tokenExpiresIn),
+    );
+    await this.emailQueue.add(
+      JobName.PASSWORD_RESET,
+      { email: user.email, token } as IResetPasswordJob,
+      { attempts: 3, backoff: { type: 'exponential', delay: 60000 } },
+    );
+
+    return { success: true };
+  }
+
+  async verifyForgotPassword(token: string): Promise<{ valid: true }> {
+    const { id } = this.verifyForgotPasswordToken(token);
+    const cachedToken = await this.cacheManager.get<string>(
+      createCacheKey(CacheKey.PASSWORD_RESET, id),
+    );
+    if (cachedToken !== token) {
+      throw new BadRequestException('Invalid reset token');
+    }
+
+    return { valid: true };
+  }
+
+  async resetPassword(dto: ResetPasswordReqDto): Promise<{ success: true }> {
+    const { id } = this.verifyForgotPasswordToken(dto.token);
+    const cachedToken = await this.cacheManager.get<string>(
+      createCacheKey(CacheKey.PASSWORD_RESET, id),
+    );
+    if (cachedToken !== dto.token) {
+      throw new BadRequestException('Invalid reset token');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id },
+      select: ['id', 'password'],
+    });
+    if (!user) {
+      throw new BadRequestException('Invalid reset token');
+    }
+
+    user.password = dto.password;
+    user.updatedBy = SYSTEM_USER_ID;
+    await this.userRepository.save(user);
+    await this.cacheManager.del(createCacheKey(CacheKey.PASSWORD_RESET, id));
+
+    return { success: true };
+  }
+
+  async changePassword(
+    userToken: JwtPayloadType,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ success: true }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userToken.id as Uuid },
+      select: ['id', 'password'],
+    });
+
+    if (!user || !(await verifyPassword(currentPassword, user.password))) {
+      throw new UnauthorizedException();
+    }
+
+    user.password = newPassword;
+    user.updatedBy = userToken.id;
+    await this.userRepository.save(user);
+    await SessionEntity.createQueryBuilder()
+      .delete()
+      .where('user_id = :userId', { userId: userToken.id })
+      .andWhere('id != :sessionId', { sessionId: userToken.sessionId })
+      .execute();
+
+    return { success: true };
   }
 
   async logout(userToken: JwtPayloadType): Promise<void> {
@@ -216,6 +333,30 @@ export class AuthService {
     }
   }
 
+  private verifyEmailToken(token: string): { id: Uuid } {
+    try {
+      return this.jwtService.verify(token, {
+        secret: this.configService.getOrThrow('auth.confirmEmailSecret', {
+          infer: true,
+        }),
+      });
+    } catch {
+      throw new BadRequestException('Invalid verification token');
+    }
+  }
+
+  private verifyForgotPasswordToken(token: string): { id: Uuid } {
+    try {
+      return this.jwtService.verify(token, {
+        secret: this.configService.getOrThrow('auth.forgotSecret', {
+          infer: true,
+        }),
+      });
+    } catch {
+      throw new BadRequestException('Invalid reset token');
+    }
+  }
+
   private async createVerificationToken(data: { id: string }): Promise<string> {
     return await this.jwtService.signAsync(
       {
@@ -229,6 +370,43 @@ export class AuthService {
           infer: true,
         }),
       },
+    );
+  }
+
+  private async createForgotPasswordToken(data: {
+    id: string;
+  }): Promise<string> {
+    return await this.jwtService.signAsync(
+      { id: data.id },
+      {
+        secret: this.configService.getOrThrow('auth.forgotSecret', {
+          infer: true,
+        }),
+        expiresIn: this.configService.getOrThrow('auth.forgotExpires', {
+          infer: true,
+        }),
+      },
+    );
+  }
+
+  private async enqueueEmailVerification(user: UserEntity): Promise<void> {
+    const token = await this.createVerificationToken({ id: user.id });
+    const tokenExpiresIn = this.configService.getOrThrow(
+      'auth.confirmEmailExpires',
+      { infer: true },
+    );
+    await this.cacheManager.set(
+      createCacheKey(CacheKey.EMAIL_VERIFICATION, user.id),
+      token,
+      ms(tokenExpiresIn),
+    );
+    await this.emailQueue.add(
+      JobName.EMAIL_VERIFICATION,
+      {
+        email: user.email,
+        token,
+      } as IVerifyEmailJob,
+      { attempts: 3, backoff: { type: 'exponential', delay: 60000 } },
     );
   }
 

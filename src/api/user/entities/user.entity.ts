@@ -56,6 +56,9 @@ export class UserEntity extends AbstractEntity {
   @Column({ default: '' })
   image?: string;
 
+  @Column({ name: 'email_verified_at', type: 'timestamptz', nullable: true })
+  emailVerifiedAt?: Date;
+
   @DeleteDateColumn({
     name: 'deleted_at',
     type: 'timestamptz',

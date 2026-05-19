@@ -33,6 +33,10 @@ export class UserResDto {
   @Expose()
   image: string;
 
+  @ClassField(() => Date)
+  @Expose()
+  emailVerifiedAt?: Date;
+
   @ClassField(() => PostResDto)
   @Expose()
   posts?: WrapperType<PostResDto[]>;

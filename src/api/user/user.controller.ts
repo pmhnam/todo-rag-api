@@ -16,9 +16,15 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
+import { JwtPayloadType } from '../auth/types/jwt-payload.type';
+import { ChangePasswordReqDto } from './dto/change-password.req.dto';
+import { CompleteAvatarReqDto } from './dto/complete-avatar.req.dto';
 import { CreateUserReqDto } from './dto/create-user.req.dto';
 import { ListUserReqDto } from './dto/list-user.req.dto';
 import { LoadMoreUsersReqDto } from './dto/load-more-users.req.dto';
+import { PresignAvatarReqDto } from './dto/presign-avatar.req.dto';
+import { PresignAvatarResDto } from './dto/presign-avatar.res.dto';
+import { UpdateMeReqDto } from './dto/update-me.req.dto';
 import { UpdateUserReqDto } from './dto/update-user.req.dto';
 import { UserResDto } from './dto/user.res.dto';
 import { UserService } from './user.service';
@@ -38,6 +44,42 @@ export class UserController {
   @Get('me')
   async getCurrentUser(@CurrentUser('id') userId: Uuid): Promise<UserResDto> {
     return await this.userService.findOne(userId);
+  }
+
+  @Patch('me')
+  @ApiAuth({ type: UserResDto, summary: 'Update current user profile' })
+  updateMe(
+    @CurrentUser('id') userId: Uuid,
+    @Body() reqDto: UpdateMeReqDto,
+  ): Promise<UserResDto> {
+    return this.userService.updateMe(userId, reqDto);
+  }
+
+  @Post('me/avatar/presign')
+  @ApiAuth({ type: PresignAvatarResDto, summary: 'Presign avatar upload' })
+  presignAvatar(
+    @CurrentUser('id') userId: Uuid,
+    @Body() reqDto: PresignAvatarReqDto,
+  ): Promise<PresignAvatarResDto> {
+    return this.userService.presignAvatar(userId, reqDto);
+  }
+
+  @Post('me/avatar/complete')
+  @ApiAuth({ type: UserResDto, summary: 'Complete avatar upload' })
+  completeAvatar(
+    @CurrentUser('id') userId: Uuid,
+    @Body() reqDto: CompleteAvatarReqDto,
+  ): Promise<UserResDto> {
+    return this.userService.completeAvatar(userId, reqDto);
+  }
+
+  @ApiAuth()
+  @Post('me/change-password')
+  async changePassword(
+    @CurrentUser() userToken: JwtPayloadType,
+    @Body() reqDto: ChangePasswordReqDto,
+  ) {
+    return this.userService.changePassword(userToken, reqDto);
   }
 
   @Post()
@@ -102,11 +144,5 @@ export class UserController {
   @ApiParam({ name: 'id', type: 'String' })
   removeUser(@Param('id', ParseUUIDPipe) id: Uuid) {
     return this.userService.remove(id);
-  }
-
-  @ApiAuth()
-  @Post('me/change-password')
-  async changePassword() {
-    return 'change-password';
   }
 }

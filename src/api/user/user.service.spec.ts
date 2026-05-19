@@ -1,3 +1,4 @@
+import { StorageService } from '@/storage/storage.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -21,6 +22,12 @@ describe('UserService', () => {
         {
           provide: getRepositoryToken(UserEntity),
           useValue: userRepositoryValue,
+        },
+        {
+          provide: StorageService,
+          useValue: {
+            createPresignedPutUrl: jest.fn(),
+          },
         },
       ],
     }).compile();
