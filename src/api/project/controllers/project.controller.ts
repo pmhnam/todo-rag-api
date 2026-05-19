@@ -17,12 +17,15 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
+import { CreateProjectInvitationReqDto } from '../dto/create-project-invitation.req.dto';
 import { CreateProjectReqDto } from '../dto/create-project.req.dto';
 import { InviteProjectMemberReqDto } from '../dto/invite-project-member.req.dto';
+import { ProjectInvitationResDto } from '../dto/project-invitation.res.dto';
 import { ProjectMemberResDto } from '../dto/project-member.res.dto';
 import { ProjectResDto } from '../dto/project.res.dto';
 import { UpdateProjectMemberReqDto } from '../dto/update-project-member.req.dto';
 import { UpdateProjectReqDto } from '../dto/update-project.req.dto';
+import { ProjectInvitationService } from '../services/project-invitation.service';
 import { ProjectMemberService } from '../services/project-member.service';
 import { ProjectService } from '../services/project.service';
 
@@ -35,6 +38,7 @@ export class ProjectController {
   constructor(
     private readonly projectService: ProjectService,
     private readonly projectMemberService: ProjectMemberService,
+    private readonly projectInvitationService: ProjectInvitationService,
   ) {}
 
   @Get()
@@ -127,6 +131,47 @@ export class ProjectController {
     @Body() reqDto: InviteProjectMemberReqDto,
   ): Promise<ProjectMemberResDto> {
     return this.projectMemberService.invite(id, userId, reqDto);
+  }
+
+  @Get(':id/invitations')
+  @ApiAuth({
+    type: ProjectInvitationResDto,
+    summary: 'List pending project invitations',
+  })
+  @ApiParam({ name: 'id', type: 'String' })
+  async findInvitations(
+    @CurrentUser('id') userId: Uuid,
+    @Param('id', ParseUUIDPipe) id: Uuid,
+  ): Promise<ProjectInvitationResDto[]> {
+    return this.projectInvitationService.findAll(id, userId);
+  }
+
+  @Post(':id/invitations')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiAuth({
+    type: ProjectInvitationResDto,
+    summary: 'Invite a collaborator by email',
+    statusCode: HttpStatus.CREATED,
+  })
+  @ApiParam({ name: 'id', type: 'String' })
+  async createInvitation(
+    @CurrentUser('id') userId: Uuid,
+    @Param('id', ParseUUIDPipe) id: Uuid,
+    @Body() reqDto: CreateProjectInvitationReqDto,
+  ): Promise<ProjectInvitationResDto> {
+    return this.projectInvitationService.create(id, userId, reqDto);
+  }
+
+  @Delete(':id/invitations/:invitationId')
+  @ApiAuth({ summary: 'Revoke a pending project invitation' })
+  @ApiParam({ name: 'id', type: 'String' })
+  @ApiParam({ name: 'invitationId', type: 'String' })
+  async revokeInvitation(
+    @CurrentUser('id') userId: Uuid,
+    @Param('id', ParseUUIDPipe) id: Uuid,
+    @Param('invitationId', ParseUUIDPipe) invitationId: Uuid,
+  ): Promise<void> {
+    return this.projectInvitationService.revoke(id, invitationId, userId);
   }
 
   @Patch(':id/members/:memberId')

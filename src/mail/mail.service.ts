@@ -38,6 +38,30 @@ export class MailService {
     });
   }
 
+  async sendProjectInvitation(params: {
+    email: string;
+    inviterName: string;
+    projectName: string;
+    token: string;
+    permission: string;
+    expiresAt: string;
+  }) {
+    const url = `${this.getFrontendUrl()}/invite?token=${params.token}`;
+
+    await this.mailerService.sendMail({
+      to: params.email,
+      subject: `Invitation to ${params.projectName}`,
+      template: 'project-invitation',
+      context: {
+        inviterName: params.inviterName,
+        projectName: params.projectName,
+        permission: params.permission,
+        expiresAt: params.expiresAt,
+        url,
+      },
+    });
+  }
+
   private getFrontendUrl() {
     return this.configService
       .getOrThrow('app.frontendUrl', { infer: true })

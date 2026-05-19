@@ -1,5 +1,6 @@
 import {
   IEmailJob,
+  IProjectInvitationJob,
   IResetPasswordJob,
   IVerifyEmailJob,
 } from '@/common/interfaces/job.interface';
@@ -43,6 +44,10 @@ export class EmailProcessor extends WorkerHost {
       case JobName.PASSWORD_RESET:
         return await this.emailQueueService.sendPasswordReset(
           job.data as unknown as IResetPasswordJob,
+        );
+      case JobName.PROJECT_INVITATION:
+        return await this.emailQueueService.sendProjectInvitation(
+          job.data as unknown as IProjectInvitationJob,
         );
       default:
         throw new Error(`Unknown job name: ${job.name}`);

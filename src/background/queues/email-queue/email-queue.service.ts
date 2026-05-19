@@ -1,4 +1,5 @@
 import {
+  IProjectInvitationJob,
   IResetPasswordJob,
   IVerifyEmailJob,
 } from '@/common/interfaces/job.interface';
@@ -19,5 +20,10 @@ export class EmailQueueService {
   async sendPasswordReset(data: IResetPasswordJob): Promise<void> {
     this.logger.debug(`Sending password reset to ${data.email}`);
     await this.mailService.sendPasswordReset(data.email, data.token);
+  }
+
+  async sendProjectInvitation(data: IProjectInvitationJob): Promise<void> {
+    this.logger.debug(`Sending project invitation to ${data.email}`);
+    await this.mailService.sendProjectInvitation(data);
   }
 }
