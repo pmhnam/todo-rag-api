@@ -22,6 +22,7 @@ export class StorageService {
     this.client = new S3Client({
       region: this.configService.getOrThrow('storage.region', { infer: true }),
       endpoint,
+      requestChecksumCalculation: 'WHEN_REQUIRED',
       credentials:
         accessKeyId && secretAccessKey
           ? { accessKeyId, secretAccessKey }
