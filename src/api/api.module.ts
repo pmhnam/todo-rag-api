@@ -8,6 +8,7 @@ import { ProjectModule } from './project/project.module';
 import { RagModule } from './rag/rag.module';
 import { TodoModule } from './todo/todo.module';
 import { UserModule } from './user/user.module';
+import { WorkspaceModule } from './workspace/workspace.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { UserModule } from './user/user.module';
     AuthModule,
 
     // Domain
+    WorkspaceModule,
     ProjectModule,
     TodoModule,
     JiraIntegrationModule,

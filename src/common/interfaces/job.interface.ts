@@ -17,3 +17,11 @@ export interface IProjectInvitationJob extends IEmailJob {
   permission: string;
   expiresAt: string;
 }
+
+export interface IWorkspaceInvitationJob extends IEmailJob {
+  inviterName: string;
+  workspaceName: string;
+  token: string;
+  permission: string;
+  expiresAt: string;
+}

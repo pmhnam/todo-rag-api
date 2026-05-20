@@ -3,6 +3,9 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from '../user/entities/user.entity';
+import { WorkspaceMemberEntity } from '../workspace/entities/workspace-member.entity';
+import { WorkspaceEntity } from '../workspace/entities/workspace.entity';
+import { WorkspaceAccessService } from '../workspace/services/workspace-access.service';
 import { ProjectInvitationController } from './controllers/project-invitation.controller';
 import { ProjectController } from './controllers/project.controller';
 import { ProjectInvitationEntity } from './entities/project-invitation.entity';
@@ -19,6 +22,8 @@ import { ProjectService } from './services/project.service';
       ProjectEntity,
       ProjectMemberEntity,
       ProjectInvitationEntity,
+      WorkspaceEntity,
+      WorkspaceMemberEntity,
       UserEntity,
     ]),
     BullModule.registerQueue({
@@ -37,6 +42,7 @@ import { ProjectService } from './services/project.service';
     ProjectAccessService,
     ProjectMemberService,
     ProjectInvitationService,
+    WorkspaceAccessService,
   ],
   exports: [ProjectService, ProjectAccessService],
 })

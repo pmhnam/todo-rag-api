@@ -1,3 +1,4 @@
+import { WorkspaceAccessService } from '@/api/workspace/services/workspace-access.service';
 import { Uuid } from '@/common/types/common.type';
 import {
   ForbiddenException,
@@ -26,6 +27,7 @@ export class ProjectAccessService {
     private readonly projectRepository: Repository<ProjectEntity>,
     @InjectRepository(ProjectMemberEntity)
     private readonly projectMemberRepository: Repository<ProjectMemberEntity>,
+    private readonly workspaceAccessService: WorkspaceAccessService,
   ) {}
 
   async getAccess(projectId: Uuid, userId: Uuid): Promise<ProjectAccess> {
@@ -34,6 +36,18 @@ export class ProjectAccessService {
     });
     if (!project) {
       throw new NotFoundException('Project not found');
+    }
+
+    if (project.workspaceId) {
+      const workspaceAccess = await this.workspaceAccessService.getAccess(
+        project.workspaceId,
+        userId,
+      );
+      return {
+        project,
+        isOwner: workspaceAccess.isOwner,
+        permission: workspaceAccess.permission,
+      };
     }
 
     if (project.userId === userId) {

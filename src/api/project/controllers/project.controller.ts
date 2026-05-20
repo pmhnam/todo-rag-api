@@ -1,4 +1,3 @@
-import { PageOptionsDto } from '@/common/dto/offset-pagination/page-options.dto';
 import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { Uuid } from '@/common/types/common.type';
 import { CurrentUser } from '@/decorators/current-user.decorator';
@@ -20,6 +19,7 @@ import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { CreateProjectInvitationReqDto } from '../dto/create-project-invitation.req.dto';
 import { CreateProjectReqDto } from '../dto/create-project.req.dto';
 import { InviteProjectMemberReqDto } from '../dto/invite-project-member.req.dto';
+import { ListProjectReqDto } from '../dto/list-project.req.dto';
 import { ProjectInvitationResDto } from '../dto/project-invitation.res.dto';
 import { ProjectMemberResDto } from '../dto/project-member.res.dto';
 import { ProjectResDto } from '../dto/project.res.dto';
@@ -49,7 +49,7 @@ export class ProjectController {
   })
   async findAll(
     @CurrentUser('id') userId: Uuid,
-    @Query() reqDto: PageOptionsDto,
+    @Query() reqDto: ListProjectReqDto,
   ): Promise<OffsetPaginatedDto<ProjectResDto>> {
     return this.projectService.findAll(userId, reqDto);
   }

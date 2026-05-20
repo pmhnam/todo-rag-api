@@ -2,6 +2,7 @@ import {
   IProjectInvitationJob,
   IResetPasswordJob,
   IVerifyEmailJob,
+  IWorkspaceInvitationJob,
 } from '@/common/interfaces/job.interface';
 import { MailService } from '@/mail/mail.service';
 import { Injectable, Logger } from '@nestjs/common';
@@ -25,5 +26,10 @@ export class EmailQueueService {
   async sendProjectInvitation(data: IProjectInvitationJob): Promise<void> {
     this.logger.debug(`Sending project invitation to ${data.email}`);
     await this.mailService.sendProjectInvitation(data);
+  }
+
+  async sendWorkspaceInvitation(data: IWorkspaceInvitationJob): Promise<void> {
+    this.logger.debug(`Sending workspace invitation to ${data.email}`);
+    await this.mailService.sendWorkspaceInvitation(data);
   }
 }

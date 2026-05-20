@@ -1,10 +1,10 @@
+import { ProjectMemberPermission } from '@/api/project/enums/project-member-permission.enum';
 import { Uuid } from '@/common/types/common.type';
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { ProjectEntity } from '../entities/project.entity';
-import { ProjectMemberPermission } from '../enums/project-member-permission.enum';
+import { WorkspaceEntity } from '../entities/workspace.entity';
 
-export class ProjectResDto {
+export class WorkspaceResDto {
   @ApiProperty({ format: 'uuid' })
   @Expose()
   id: Uuid;
@@ -19,15 +19,7 @@ export class ProjectResDto {
 
   @ApiProperty({ format: 'uuid' })
   @Expose()
-  userId: Uuid;
-
-  @ApiProperty({ format: 'uuid', required: false })
-  @Expose()
-  workspaceId?: Uuid;
-
-  @ApiProperty({ required: false })
-  @Expose()
-  settings?: Record<string, any>;
+  ownerId: Uuid;
 
   @ApiProperty()
   @Expose()
@@ -46,16 +38,14 @@ export class ProjectResDto {
   updatedAt: Date;
 
   constructor(
-    entity: ProjectEntity,
+    entity: WorkspaceEntity,
     access?: { isOwner: boolean; permission: ProjectMemberPermission },
   ) {
     Object.assign(this, {
       id: entity.id,
       name: entity.name,
       description: entity.description,
-      userId: entity.userId,
-      workspaceId: entity.workspaceId,
-      settings: entity.settings,
+      ownerId: entity.ownerId,
       isOwner: access?.isOwner ?? true,
       permission: access?.permission ?? ProjectMemberPermission.WRITE_INVITE,
       createdAt: entity.createdAt,

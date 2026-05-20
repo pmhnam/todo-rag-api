@@ -1,6 +1,7 @@
 import { TodoStatusEntity } from '@/api/todo/entities/todo-status.entity';
 import { TodoEntity } from '@/api/todo/entities/todo.entity';
 import { UserEntity } from '@/api/user/entities/user.entity';
+import { WorkspaceEntity } from '@/api/workspace/entities/workspace.entity';
 import { Uuid } from '@/common/types/common.type';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
 import {
@@ -41,6 +42,17 @@ export class ProjectEntity extends AbstractEntity {
   })
   @ManyToOne(() => UserEntity, (user) => user.projects)
   user: Relation<UserEntity>;
+
+  @Column({ name: 'workspace_id', nullable: true })
+  workspaceId?: Uuid;
+
+  @JoinColumn({
+    name: 'workspace_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'FK_project_workspace_id',
+  })
+  @ManyToOne(() => WorkspaceEntity, (workspace) => workspace.projects)
+  workspace?: Relation<WorkspaceEntity>;
 
   @OneToMany(() => TodoStatusEntity, (status) => status.project)
   todoStatuses: Relation<TodoStatusEntity[]>;

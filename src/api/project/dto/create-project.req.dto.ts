@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateProjectReqDto {
   @ApiProperty({ example: 'My Awesome Project' })
@@ -12,4 +18,9 @@ export class CreateProjectReqDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsUUID()
+  @IsOptional()
+  workspaceId?: string;
 }

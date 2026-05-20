@@ -1,3 +1,4 @@
+import { ProjectMemberPermission } from '@/api/project/enums/project-member-permission.enum';
 import { UserEntity } from '@/api/user/entities/user.entity';
 import { Uuid } from '@/common/types/common.type';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
@@ -10,47 +11,42 @@ import {
   PrimaryGeneratedColumn,
   Relation,
 } from 'typeorm';
-import { ProjectInvitationStatus } from '../enums/project-invitation-status.enum';
-import { ProjectMemberPermission } from '../enums/project-member-permission.enum';
-import { ProjectEntity } from './project.entity';
+import { WorkspaceInvitationStatus } from '../enums/workspace-invitation-status.enum';
+import { WorkspaceEntity } from './workspace.entity';
 
-@Entity('project_invitation')
-@Index('IDX_project_invitation_token_hash', ['tokenHash'])
-@Index('IDX_project_invitation_project_status', ['projectId', 'status'])
-@Index('UQ_project_invitation_pending_email', ['projectId', 'email'], {
+@Entity('workspace_invitation')
+@Index('IDX_workspace_invitation_token_hash', ['tokenHash'])
+@Index('IDX_workspace_invitation_workspace_status', ['workspaceId', 'status'])
+@Index('UQ_workspace_invitation_pending_email', ['workspaceId', 'email'], {
   unique: true,
   where: `"status" = 'PENDING'`,
 })
-export class ProjectInvitationEntity extends AbstractEntity {
-  constructor(data?: Partial<ProjectInvitationEntity>) {
+export class WorkspaceInvitationEntity extends AbstractEntity {
+  constructor(data?: Partial<WorkspaceInvitationEntity>) {
     super();
     Object.assign(this, data);
   }
 
   @PrimaryGeneratedColumn('uuid', {
-    primaryKeyConstraintName: 'PK_project_invitation_id',
+    primaryKeyConstraintName: 'PK_workspace_invitation_id',
   })
   id!: Uuid;
 
-  @Column({ name: 'project_id' })
-  projectId!: Uuid;
+  @Column({ name: 'workspace_id' })
+  workspaceId!: Uuid;
 
   @JoinColumn({
-    name: 'project_id',
+    name: 'workspace_id',
     referencedColumnName: 'id',
-    foreignKeyConstraintName: 'FK_project_invitation_project_id',
+    foreignKeyConstraintName: 'FK_workspace_invitation_workspace_id',
   })
-  @ManyToOne(() => ProjectEntity)
-  project: Relation<ProjectEntity>;
+  @ManyToOne(() => WorkspaceEntity)
+  workspace: Relation<WorkspaceEntity>;
 
   @Column({ name: 'email' })
   email!: string;
 
-  @Column({
-    name: 'permission',
-    type: 'enum',
-    enum: ProjectMemberPermission,
-  })
+  @Column({ name: 'permission', type: 'enum', enum: ProjectMemberPermission })
   permission!: ProjectMemberPermission;
 
   @Column({ name: 'token_hash' })
@@ -59,10 +55,10 @@ export class ProjectInvitationEntity extends AbstractEntity {
   @Column({
     name: 'status',
     type: 'enum',
-    enum: ProjectInvitationStatus,
-    default: ProjectInvitationStatus.PENDING,
+    enum: WorkspaceInvitationStatus,
+    default: WorkspaceInvitationStatus.PENDING,
   })
-  status!: ProjectInvitationStatus;
+  status!: WorkspaceInvitationStatus;
 
   @Column({ name: 'invited_by' })
   invitedBy!: Uuid;
@@ -70,7 +66,7 @@ export class ProjectInvitationEntity extends AbstractEntity {
   @JoinColumn({
     name: 'invited_by',
     referencedColumnName: 'id',
-    foreignKeyConstraintName: 'FK_project_invitation_invited_by',
+    foreignKeyConstraintName: 'FK_workspace_invitation_invited_by',
   })
   @ManyToOne(() => UserEntity)
   inviter: Relation<UserEntity>;
