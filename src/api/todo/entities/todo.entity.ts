@@ -70,6 +70,17 @@ export class TodoEntity extends AbstractEntity {
   @ManyToOne(() => UserEntity, (user) => user.todos)
   user: Relation<UserEntity>;
 
+  @Column({ name: 'assignee_id', nullable: true })
+  assigneeId?: Uuid;
+
+  @JoinColumn({
+    name: 'assignee_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'FK_todo_assignee_id',
+  })
+  @ManyToOne(() => UserEntity, (user) => user.assignedTodos)
+  assignee?: Relation<UserEntity>;
+
   @Column({ name: 'project_id', nullable: true })
   projectId?: Uuid;
 

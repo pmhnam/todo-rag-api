@@ -15,6 +15,7 @@ export class FindAgentTodosUseCase {
       query?: string;
       statusId?: Uuid;
       priority?: TodoPriority;
+      assigneeId?: Uuid;
     },
   ): Promise<TodoEntity[]> {
     return this.todoRepository.findOwnedForAgent(userId, params);

@@ -41,12 +41,23 @@ export class TodoRepository {
     const query = this.repository
       .createQueryBuilder('todo')
       .leftJoinAndSelect('todo.status', 'status')
+      .leftJoinAndSelect('todo.assignee', 'assignee')
       .leftJoinAndSelect('todo.attachments', 'attachments')
       .leftJoin('todo.project', 'project')
       .leftJoin('project.members', 'member', 'member.user_id = :userId', {
         userId,
       })
-      .where('(project.user_id = :userId OR member.id IS NOT NULL)', { userId })
+      .leftJoin('project.workspace', 'workspace')
+      .leftJoin(
+        'workspace.members',
+        'workspaceMember',
+        'workspaceMember.user_id = :userId',
+        { userId },
+      )
+      .where(
+        '(project.user_id = :userId OR member.id IS NOT NULL OR workspace.owner_id = :userId OR workspaceMember.id IS NOT NULL)',
+        { userId },
+      )
       .andWhere('todo.project_id = :projectId', {
         projectId: reqDto.projectId,
       });
@@ -61,6 +72,16 @@ export class TodoRepository {
       query.andWhere('todo.priority = :priority', {
         priority: reqDto.priority,
       });
+    }
+
+    if (reqDto.assigneeId) {
+      query.andWhere('todo.assignee_id = :assigneeId', {
+        assigneeId: reqDto.assigneeId,
+      });
+    }
+
+    if (reqDto.unassigned) {
+      query.andWhere('todo.assignee_id IS NULL');
     }
 
     if (reqDto.jiraSyncStatus) {
@@ -89,6 +110,7 @@ export class TodoRepository {
   findOwnedWithStatus(id: Uuid, userId: Uuid): Promise<TodoEntity | null> {
     return this.createAccessibleTodoQuery(id, userId)
       .leftJoinAndSelect('todo.status', 'detailStatus')
+      .leftJoinAndSelect('todo.assignee', 'detailAssignee')
       .leftJoinAndSelect('todo.attachments', 'detailAttachments')
       .getOne();
   }
@@ -100,10 +122,18 @@ export class TodoRepository {
       .leftJoin('project.members', 'member', 'member.user_id = :userId', {
         userId,
       })
+      .leftJoin('project.workspace', 'workspace')
+      .leftJoin(
+        'workspace.members',
+        'workspaceMember',
+        'workspaceMember.user_id = :userId',
+        { userId },
+      )
       .where('todo.id = :id', { id })
-      .andWhere('(project.user_id = :userId OR member.id IS NOT NULL)', {
-        userId,
-      });
+      .andWhere(
+        '(project.user_id = :userId OR member.id IS NOT NULL OR workspace.owner_id = :userId OR workspaceMember.id IS NOT NULL)',
+        { userId },
+      );
   }
 
   findOwnedForAgent(
@@ -113,16 +143,28 @@ export class TodoRepository {
       query?: string;
       statusId?: Uuid;
       priority?: TodoPriority;
+      assigneeId?: Uuid;
     },
   ): Promise<TodoEntity[]> {
     const query = this.repository
       .createQueryBuilder('todo')
       .leftJoinAndSelect('todo.status', 'status')
+      .leftJoinAndSelect('todo.assignee', 'assignee')
       .leftJoin('todo.project', 'project')
       .leftJoin('project.members', 'member', 'member.user_id = :userId', {
         userId,
       })
-      .where('(project.user_id = :userId OR member.id IS NOT NULL)', { userId })
+      .leftJoin('project.workspace', 'workspace')
+      .leftJoin(
+        'workspace.members',
+        'workspaceMember',
+        'workspaceMember.user_id = :userId',
+        { userId },
+      )
+      .where(
+        '(project.user_id = :userId OR member.id IS NOT NULL OR workspace.owner_id = :userId OR workspaceMember.id IS NOT NULL)',
+        { userId },
+      )
       .andWhere('todo.archived_at IS NULL')
       .orderBy('todo.updatedAt', 'DESC')
       .take(10);
@@ -149,6 +191,12 @@ export class TodoRepository {
       });
     }
 
+    if (params.assigneeId) {
+      query.andWhere('todo.assignee_id = :assigneeId', {
+        assigneeId: params.assigneeId,
+      });
+    }
+
     return query.getMany();
   }
 
@@ -168,9 +216,17 @@ export class TodoRepository {
       .leftJoin('project.members', 'member', 'member.user_id = :userId', {
         userId,
       })
-      .where('(project.user_id = :userId OR member.id IS NOT NULL)', {
-        userId,
-      })
+      .leftJoin('project.workspace', 'workspace')
+      .leftJoin(
+        'workspace.members',
+        'workspaceMember',
+        'workspaceMember.user_id = :userId',
+        { userId },
+      )
+      .where(
+        '(project.user_id = :userId OR member.id IS NOT NULL OR workspace.owner_id = :userId OR workspaceMember.id IS NOT NULL)',
+        { userId },
+      )
       .andWhere('todo.archived_at IS NULL');
 
     if (params.projectId) {
@@ -246,9 +302,17 @@ export class TodoRepository {
       .leftJoin('project.members', 'member', 'member.user_id = :userId', {
         userId,
       })
-      .where('(project.user_id = :userId OR member.id IS NOT NULL)', {
-        userId,
-      })
+      .leftJoin('project.workspace', 'workspace')
+      .leftJoin(
+        'workspace.members',
+        'workspaceMember',
+        'workspaceMember.user_id = :userId',
+        { userId },
+      )
+      .where(
+        '(project.user_id = :userId OR member.id IS NOT NULL OR workspace.owner_id = :userId OR workspaceMember.id IS NOT NULL)',
+        { userId },
+      )
       .andWhere('todo.archived_at IS NULL');
 
     if (params.projectId) {
@@ -363,7 +427,25 @@ export class TodoRepository {
 
   findOwnedByIds(ids: Uuid[], userId: Uuid): Promise<TodoEntity[]> {
     if (ids.length === 0) return Promise.resolve([]);
-    return this.repository.find({ where: { id: In(ids) } });
+    return this.repository
+      .createQueryBuilder('todo')
+      .leftJoin('todo.project', 'project')
+      .leftJoin('project.members', 'member', 'member.user_id = :userId', {
+        userId,
+      })
+      .leftJoin('project.workspace', 'workspace')
+      .leftJoin(
+        'workspace.members',
+        'workspaceMember',
+        'workspaceMember.user_id = :userId',
+        { userId },
+      )
+      .where({ id: In(ids) })
+      .andWhere(
+        '(project.user_id = :userId OR member.id IS NOT NULL OR workspace.owner_id = :userId OR workspaceMember.id IS NOT NULL)',
+        { userId },
+      )
+      .getMany();
   }
 
   async getNextPosition(projectId: Uuid, statusId: Uuid) {

@@ -1,3 +1,4 @@
+import { WorkspaceMemberEntity } from '@/api/workspace/entities/workspace-member.entity';
 import { WorkspaceAccessService } from '@/api/workspace/services/workspace-access.service';
 import { Uuid } from '@/common/types/common.type';
 import {
@@ -27,6 +28,8 @@ export class ProjectAccessService {
     private readonly projectRepository: Repository<ProjectEntity>,
     @InjectRepository(ProjectMemberEntity)
     private readonly projectMemberRepository: Repository<ProjectMemberEntity>,
+    @InjectRepository(WorkspaceMemberEntity)
+    private readonly workspaceMemberRepository: Repository<WorkspaceMemberEntity>,
     private readonly workspaceAccessService: WorkspaceAccessService,
   ) {}
 
@@ -102,5 +105,30 @@ export class ProjectAccessService {
       );
     }
     return access;
+  }
+
+  async assertAssignableUser(projectId: Uuid, assigneeId: Uuid): Promise<void> {
+    const project = await this.projectRepository.findOne({
+      where: { id: projectId },
+    });
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    if (project.userId === assigneeId) return;
+
+    if (project.workspaceId) {
+      const member = await this.workspaceMemberRepository.findOne({
+        where: { workspaceId: project.workspaceId, userId: assigneeId },
+      });
+      if (member) return;
+    }
+
+    const member = await this.projectMemberRepository.findOne({
+      where: { projectId, userId: assigneeId },
+    });
+    if (member) return;
+
+    throw new ForbiddenException('Assignee is not a project member');
   }
 }

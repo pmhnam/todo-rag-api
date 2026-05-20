@@ -8,6 +8,7 @@ import {
   StringFieldOptional,
   URLField,
   UUIDField,
+  UUIDFieldOptional,
 } from '@/decorators/field.decorators';
 import { TodoPriority } from '../enums/todo-priority.enum';
 
@@ -31,6 +32,9 @@ export class CreateTodoReqDto {
 
   @UUIDField({ description: 'ID of the todo status column' })
   readonly statusId: string;
+
+  @UUIDFieldOptional({ description: 'ID of the assigned workspace member' })
+  readonly assigneeId?: string | null;
 
   @EnumFieldOptional(() => TodoPriority, {
     default: TodoPriority.MEDIUM,

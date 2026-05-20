@@ -40,6 +40,13 @@ export class CreateTodoUseCase {
       throw new ValidationException(ErrorCode.E111);
     }
 
+    if (reqDto.assigneeId) {
+      await this.projectAccessService.assertAssignableUser(
+        reqDto.projectId as Uuid,
+        reqDto.assigneeId as Uuid,
+      );
+    }
+
     let data = reqDto;
     if (!data.aiSummary) {
       const aiSummary = await this.todoAiSummaryService.generate(
@@ -56,6 +63,7 @@ export class CreateTodoUseCase {
       ...data,
       statusId: data.statusId as Uuid,
       projectId: data.projectId as Uuid,
+      assigneeId: data.assigneeId ? (data.assigneeId as Uuid) : undefined,
       priority: data.priority || TodoPriority.MEDIUM,
       position:
         data.position ??

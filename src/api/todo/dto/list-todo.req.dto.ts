@@ -15,6 +15,12 @@ export class ListTodoReqDto extends PageOptionsDto {
   @UUIDFieldOptional({ description: 'Filter by status column ID' })
   readonly statusId?: string;
 
+  @UUIDFieldOptional({ description: 'Filter by assigned user ID' })
+  readonly assigneeId?: string;
+
+  @BooleanFieldOptional({ description: 'When true, return unassigned tasks' })
+  readonly unassigned?: boolean;
+
   @EnumFieldOptional(() => TodoPriority, { enumName: 'TodoPriority' })
   readonly priority?: TodoPriority;
 

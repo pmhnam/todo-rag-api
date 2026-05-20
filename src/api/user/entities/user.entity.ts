@@ -84,6 +84,9 @@ export class UserEntity extends AbstractEntity {
   @OneToMany('TodoEntity', (todo: TodoEntity) => todo.user)
   todos: Relation<TodoEntity[]>;
 
+  @OneToMany('TodoEntity', (todo: TodoEntity) => todo.assignee)
+  assignedTodos: Relation<TodoEntity[]>;
+
   @OneToMany('TodoStatusEntity', (status: TodoStatusEntity) => status.user)
   todoStatuses: Relation<TodoStatusEntity[]>;
 

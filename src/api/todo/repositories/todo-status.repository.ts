@@ -24,7 +24,17 @@ export class TodoStatusRepository {
       .leftJoin('project.members', 'member', 'member.user_id = :userId', {
         userId,
       })
-      .where('(project.user_id = :userId OR member.id IS NOT NULL)', { userId })
+      .leftJoin('project.workspace', 'workspace')
+      .leftJoin(
+        'workspace.members',
+        'workspaceMember',
+        'workspaceMember.user_id = :userId',
+        { userId },
+      )
+      .where(
+        '(project.user_id = :userId OR member.id IS NOT NULL OR workspace.owner_id = :userId OR workspaceMember.id IS NOT NULL)',
+        { userId },
+      )
       .andWhere('status.project_id = :projectId', {
         projectId: reqDto.projectId,
       })
@@ -54,10 +64,18 @@ export class TodoStatusRepository {
       .leftJoin('project.members', 'member', 'member.user_id = :userId', {
         userId,
       })
+      .leftJoin('project.workspace', 'workspace')
+      .leftJoin(
+        'workspace.members',
+        'workspaceMember',
+        'workspaceMember.user_id = :userId',
+        { userId },
+      )
       .where('status.id = :id', { id })
-      .andWhere('(project.user_id = :userId OR member.id IS NOT NULL)', {
-        userId,
-      });
+      .andWhere(
+        '(project.user_id = :userId OR member.id IS NOT NULL OR workspace.owner_id = :userId OR workspaceMember.id IS NOT NULL)',
+        { userId },
+      );
   }
 
   findOwnedInProject(
@@ -79,11 +97,19 @@ export class TodoStatusRepository {
       .leftJoin('project.members', 'member', 'member.user_id = :userId', {
         userId,
       })
+      .leftJoin('project.workspace', 'workspace')
+      .leftJoin(
+        'workspace.members',
+        'workspaceMember',
+        'workspaceMember.user_id = :userId',
+        { userId },
+      )
       .where('status.project_id = :projectId', { projectId })
       .andWhere('status.name ILIKE :name', { name: `%${name}%` })
-      .andWhere('(project.user_id = :userId OR member.id IS NOT NULL)', {
-        userId,
-      })
+      .andWhere(
+        '(project.user_id = :userId OR member.id IS NOT NULL OR workspace.owner_id = :userId OR workspaceMember.id IS NOT NULL)',
+        { userId },
+      )
       .orderBy('status.order', 'ASC')
       .take(5)
       .getMany();

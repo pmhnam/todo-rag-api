@@ -222,15 +222,23 @@ export class TaskToolFactory {
           projectId: z.string().uuid().optional().describe('Project/board ID'),
           query: z.string().optional().describe('Text to search in task title'),
           statusId: z.string().uuid().optional(),
+          assigneeId: z.string().uuid().optional(),
           priority: z.enum(TodoPriority).optional(),
         }),
-        execute: async ({ projectId, query, statusId, priority }) => {
+        execute: async ({
+          projectId,
+          query,
+          statusId,
+          assigneeId,
+          priority,
+        }) => {
           const todos = await this.findAgentTodosUseCase.execute(
             context.userId,
             {
               projectId: projectId as Uuid | undefined,
               query,
               statusId: statusId as Uuid | undefined,
+              assigneeId: assigneeId as Uuid | undefined,
               priority,
             },
           );
@@ -331,6 +339,7 @@ export class TaskToolFactory {
           description: nullableString,
           statusId: z.string().uuid().optional(),
           statusName: z.string().optional(),
+          assigneeId: z.string().uuid().optional(),
           priority: z.enum(TodoPriority).optional(),
           dueDate: nullableString.describe('Date string in YYYY-MM-DD format'),
           tags: z.array(z.string()).optional(),
@@ -346,6 +355,7 @@ export class TaskToolFactory {
             title: input.title,
             description: input.description || undefined,
             statusId,
+            assigneeId: input.assigneeId,
             priority: input.priority,
             dueDate: this.parseDate(input.dueDate),
             tags: input.tags,
@@ -360,6 +370,7 @@ export class TaskToolFactory {
           title: z.string().min(1).max(255).optional(),
           description: nullableString,
           priority: z.enum(TodoPriority).optional(),
+          assigneeId: z.string().uuid().nullable().optional(),
           dueDate: nullableString.describe('Date string in YYYY-MM-DD format'),
           tags: z.array(z.string()).optional(),
           externalLinks: z

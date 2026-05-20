@@ -1,3 +1,4 @@
+import { ProjectMemberPermission } from '@/api/project/enums/project-member-permission.enum';
 import { UserEntity } from '@/api/user/entities/user.entity';
 import { Uuid } from '@/common/types/common.type';
 import {
@@ -28,12 +29,28 @@ export class WorkspaceMemberService {
 
   async findAll(workspaceId: Uuid, userId: Uuid) {
     await this.workspaceAccessService.assertCanRead(workspaceId, userId);
+    const workspace = await this.workspaceRepository.findOne({
+      where: { id: workspaceId },
+      relations: ['owner'],
+    });
+    if (!workspace) throw new NotFoundException('Workspace not found');
     const members = await this.workspaceMemberRepository.find({
       where: { workspaceId },
       relations: ['user'],
       order: { createdAt: 'ASC' },
     });
-    return members.map((member) => new WorkspaceMemberResDto(member));
+    return [
+      {
+        id: workspace.ownerId,
+        workspaceId,
+        userId: workspace.ownerId,
+        userName: workspace.owner?.name,
+        userEmail: workspace.owner?.email,
+        permission: ProjectMemberPermission.WRITE_INVITE,
+        createdAt: workspace.createdAt,
+      },
+      ...members.map((member) => new WorkspaceMemberResDto(member)),
+    ];
   }
 
   async update(

@@ -18,6 +18,29 @@ import { TodoAttachmentResDto } from './todo-attachment.res.dto';
 import { TodoStatusResDto } from './todo-status.res.dto';
 
 @Exclude()
+class TodoAssigneeResDto {
+  @UUIDField()
+  @Expose()
+  id: string;
+
+  @StringFieldOptional()
+  @Expose()
+  username?: string;
+
+  @StringField()
+  @Expose()
+  name: string;
+
+  @StringField()
+  @Expose()
+  email: string;
+
+  @StringFieldOptional()
+  @Expose()
+  image?: string;
+}
+
+@Exclude()
 export class TodoResDto {
   @UUIDField()
   @Expose()
@@ -42,6 +65,14 @@ export class TodoResDto {
   @ClassFieldOptional(() => TodoStatusResDto)
   @Expose()
   status?: WrapperType<TodoStatusResDto>;
+
+  @UUIDField({ required: false, nullable: true })
+  @Expose()
+  assigneeId?: string;
+
+  @ClassFieldOptional(() => TodoAssigneeResDto)
+  @Expose()
+  assignee?: WrapperType<TodoAssigneeResDto>;
 
   @EnumField(() => TodoPriority, { enumName: 'TodoPriority' })
   @Expose()

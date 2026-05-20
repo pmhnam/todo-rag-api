@@ -52,7 +52,15 @@ export class UpdateTodoUseCase {
       aiSummary: todo.aiSummary,
       generatedByAi: todo.generatedByAi,
       externalLinks: todo.externalLinks,
+      assigneeId: todo.assigneeId,
     };
+
+    if (reqDto.assigneeId) {
+      await this.projectAccessService.assertAssignableUser(
+        todo.projectId,
+        reqDto.assigneeId as Uuid,
+      );
+    }
 
     if (statusChanged) {
       const status = await this.todoStatusRepository.findOwnedInProject(
@@ -127,6 +135,7 @@ export class UpdateTodoUseCase {
       aiSummary: todo.aiSummary,
       generatedByAi: todo.generatedByAi,
       externalLinks: todo.externalLinks,
+      assigneeId: todo.assigneeId,
     };
     return Object.entries(after)
       .filter(
