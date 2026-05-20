@@ -56,6 +56,6 @@ export class WorkspaceMemberEntity extends AbstractEntity {
   })
   permission!: ProjectMemberPermission;
 
-  @Column({ name: 'invited_by', nullable: true })
+  @Column({ name: 'invited_by', type: 'uuid', nullable: true })
   invitedBy?: Uuid;
 }
