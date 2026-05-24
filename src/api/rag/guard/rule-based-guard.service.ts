@@ -27,6 +27,17 @@ export class RuleBasedGuardService {
       /dashboard/,
       /thong ke/,
       /tien do/,
+      /standup/,
+      /daily standup/,
+      /risk/,
+      /risks/,
+      /rui ro/,
+      /next action/,
+      /next actions/,
+      /blocker/,
+      /blockers/,
+      /blocked/,
+      /hanh dong tiep theo/,
     ];
 
     const outOfScopePatterns = [
@@ -48,6 +59,12 @@ export class RuleBasedGuardService {
     const taskCreatePatterns = [
       /\b(tao|them|create|add)\s+(task|todo|cong viec|viec)\b/,
     ];
+    const standupReportPatterns = [
+      /standup/,
+      /daily standup/,
+      /\b(risk|risks|rui ro)\b.*\b(next action|next actions|hanh dong tiep theo)\b/,
+      /\b(next action|next actions|hanh dong tiep theo)\b.*\b(risk|risks|rui ro)\b/,
+    ];
 
     const isTodoLike = todoLikePatterns.some((rule) => rule.test(normalized));
     const isOutOfScope = outOfScopePatterns.some((rule) =>
@@ -59,6 +76,14 @@ export class RuleBasedGuardService {
         intent: AiIntent.TASK_CREATE,
         confidence: 0.99,
         reason: 'Matched explicit task creation pattern.',
+      };
+    }
+
+    if (standupReportPatterns.some((rule) => rule.test(normalized))) {
+      return {
+        intent: AiIntent.STANDUP_REPORT,
+        confidence: 0.99,
+        reason: 'Matched standup/report summary pattern.',
       };
     }
 

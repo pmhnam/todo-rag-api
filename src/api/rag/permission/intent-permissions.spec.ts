@@ -35,4 +35,24 @@ describe('INTENT_TOOL_PERMISSIONS', () => {
       'deleteTask',
     );
   });
+
+  it('allows standup report read-only tools', () => {
+    expect(INTENT_TOOL_PERMISSIONS[AiIntent.STANDUP_REPORT]).toEqual([
+      'listProjects',
+      'listTaskStatuses',
+      'findTasks',
+      'getTaskDetails',
+      'getDashboardStats',
+      'countTasks',
+    ]);
+    expect(INTENT_TOOL_PERMISSIONS[AiIntent.STANDUP_REPORT]).not.toContain(
+      'createTask',
+    );
+    expect(INTENT_TOOL_PERMISSIONS[AiIntent.STANDUP_REPORT]).not.toContain(
+      'updateTask',
+    );
+    expect(INTENT_TOOL_PERMISSIONS[AiIntent.STANDUP_REPORT]).not.toContain(
+      'deleteTask',
+    );
+  });
 });

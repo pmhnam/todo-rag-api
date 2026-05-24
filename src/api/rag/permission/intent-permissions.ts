@@ -47,6 +47,13 @@ export const INTENT_TOOL_PERMISSIONS: Record<AiIntent, string[]> = {
     ...READ_TOOLS.STATUS,
     ...READ_TOOLS.DASHBOARD,
   ],
+  [AiIntent.STANDUP_REPORT]: [
+    ...READ_TOOLS.PROJECT,
+    ...READ_TOOLS.STATUS,
+    'findTasks',
+    'getTaskDetails',
+    ...READ_TOOLS.DASHBOARD,
+  ],
   [AiIntent.TODO_HELP]: [],
   [AiIntent.OUT_OF_SCOPE]: [],
   [AiIntent.AMBIGUOUS]: [],

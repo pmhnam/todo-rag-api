@@ -93,13 +93,14 @@ Classify the user message into exactly one intent:
 TASK_CREATE, TASK_UPDATE, TASK_DELETE, TASK_SEARCH,
 PROJECT_MANAGE, COMMENT_CREATE, COMMENT_SEARCH,
 TAG_MANAGE, STATUS_UPDATE, DASHBOARD_QUERY,
-TODO_HELP, OUT_OF_SCOPE, AMBIGUOUS.
+STANDUP_REPORT, TODO_HELP, OUT_OF_SCOPE, AMBIGUOUS.
 
 Rules:
 - Return JSON only using this schema: {"intent":"TASK_CREATE","confidence":0.9,"reason":"short reason"}
 - Never answer the user request.
 - If unrelated to Todo app, return OUT_OF_SCOPE.
 - If unclear but possibly related to Todo app, return AMBIGUOUS.
+- Use STANDUP_REPORT when the user asks for a daily standup, progress summary, risks, blockers, or next actions based on Todo/project data.
 - The intent value must be one of: ${AI_INTENT_VALUES.join(', ')}.
 
 User message:

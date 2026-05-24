@@ -74,6 +74,17 @@ export const INTENT_EXAMPLES: Record<
     'tiến độ project backend',
     'completion rate tháng này',
   ],
+  [AiIntent.STANDUP_REPORT]: [
+    'tạo standup hôm nay',
+    'generate daily standup',
+    'tổng hợp standup gồm yesterday today blockers',
+    'liệt kê risks và next actions',
+    'rủi ro hiện tại là gì',
+    'các hành động tiếp theo cần làm',
+    'tạo báo cáo tiến độ kèm risks và next actions',
+    'standup hôm nay có blockers gì',
+    'summary việc đang làm, rủi ro và next actions',
+  ],
   [AiIntent.TODO_HELP]: [
     'app này làm được gì',
     'hướng dẫn dùng AI todo',

@@ -27,6 +27,18 @@ describe('RuleBasedGuardService', () => {
     },
   );
 
+  it.each([
+    'Tạo standup hôm nay',
+    'Generate daily standup',
+    'Liệt kê risks và next actions',
+    'Rủi ro hiện tại và hành động tiếp theo là gì',
+  ])('classifies standup report request: %s', (message) => {
+    expect(service.check(message)).toMatchObject({
+      intent: AiIntent.STANDUP_REPORT,
+      confidence: 0.99,
+    });
+  });
+
   it('does not block todo-like edge case', () => {
     expect(service.check('Nhắc tôi học React')).toBeNull();
   });

@@ -22,6 +22,10 @@ describe('LlmClassifierService', () => {
     ['Gắn tag urgent cho task deploy', AiIntent.TAG_MANAGE],
     ['Comment task này là cần fix gấp', AiIntent.COMMENT_CREATE],
     ['Thống kê task tuần này', AiIntent.DASHBOARD_QUERY],
+    [
+      'Generate daily standup with risks and next actions',
+      AiIntent.STANDUP_REPORT,
+    ],
   ])('returns allowed intent for %s', async (message, intent) => {
     llmService.generate.mockResolvedValueOnce({
       content: JSON.stringify({ intent, confidence: 0.9, reason: 'test' }),
