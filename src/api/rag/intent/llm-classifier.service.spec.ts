@@ -26,6 +26,7 @@ describe('LlmClassifierService', () => {
       'Generate daily standup with risks and next actions',
       AiIntent.STANDUP_REPORT,
     ],
+    ['What are the next actions for my tasks', AiIntent.STANDUP_REPORT],
   ])('returns allowed intent for %s', async (message, intent) => {
     llmService.generate.mockResolvedValueOnce({
       content: JSON.stringify({ intent, confidence: 0.9, reason: 'test' }),

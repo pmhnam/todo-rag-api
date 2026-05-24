@@ -32,6 +32,10 @@ describe('RuleBasedGuardService', () => {
     'Generate daily standup',
     'Liệt kê risks và next actions',
     'Rủi ro hiện tại và hành động tiếp theo là gì',
+    'Đề xuất next actions',
+    'Next actions cần làm là gì',
+    'Tạo danh sách hành động tiếp theo',
+    'What are the next actions',
   ])('classifies standup report request: %s', (message) => {
     expect(service.check(message)).toMatchObject({
       intent: AiIntent.STANDUP_REPORT,

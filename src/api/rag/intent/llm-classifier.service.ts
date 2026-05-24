@@ -100,7 +100,7 @@ Rules:
 - Never answer the user request.
 - If unrelated to Todo app, return OUT_OF_SCOPE.
 - If unclear but possibly related to Todo app, return AMBIGUOUS.
-- Use STANDUP_REPORT when the user asks for a daily standup, progress summary, risks, blockers, or next actions based on Todo/project data.
+- Use STANDUP_REPORT when the user asks for a daily standup, progress summary, next actions, action items, follow-up actions, risks, or blockers based on Todo/project data.
 - The intent value must be one of: ${AI_INTENT_VALUES.join(', ')}.
 
 User message:

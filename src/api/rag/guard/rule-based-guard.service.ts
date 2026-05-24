@@ -34,6 +34,10 @@ export class RuleBasedGuardService {
       /rui ro/,
       /next action/,
       /next actions/,
+      /action item/,
+      /action items/,
+      /de xuat/,
+      /hanh dong/,
       /blocker/,
       /blockers/,
       /blocked/,
@@ -62,6 +66,12 @@ export class RuleBasedGuardService {
     const standupReportPatterns = [
       /standup/,
       /daily standup/,
+      /next action/,
+      /next actions/,
+      /hanh dong tiep theo/,
+      /action item/,
+      /action items/,
+      /de xuat.*hanh dong/,
       /\b(risk|risks|rui ro)\b.*\b(next action|next actions|hanh dong tiep theo)\b/,
       /\b(next action|next actions|hanh dong tiep theo)\b.*\b(risk|risks|rui ro)\b/,
     ];

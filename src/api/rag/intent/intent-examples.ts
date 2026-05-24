@@ -84,6 +84,12 @@ export const INTENT_EXAMPLES: Record<
     'tạo báo cáo tiến độ kèm risks và next actions',
     'standup hôm nay có blockers gì',
     'summary việc đang làm, rủi ro và next actions',
+    'đề xuất next actions',
+    'next actions cần làm là gì',
+    'tạo danh sách hành động tiếp theo',
+    'what are the next actions',
+    'action items tiếp theo là gì',
+    'đề xuất các việc cần làm tiếp theo',
   ],
   [AiIntent.TODO_HELP]: [
     'app này làm được gì',
