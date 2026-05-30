@@ -370,7 +370,7 @@ export class AuthService {
     return this.googleClient;
   }
 
-  private async createSessionAndToken(userId: string): Promise<Token> {
+  private async createSessionAndToken(userId: Uuid): Promise<Token> {
     const hash = crypto
       .createHash('sha256')
       .update(randomStringGenerator())
