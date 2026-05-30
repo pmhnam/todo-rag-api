@@ -47,8 +47,8 @@ export class UserEntity extends AbstractEntity {
   @Column({ length: 100 })
   name!: string;
 
-  @Column()
-  password!: string;
+  @Column({ nullable: true })
+  password?: string | null;
 
   @Column({ default: '' })
   bio?: string;

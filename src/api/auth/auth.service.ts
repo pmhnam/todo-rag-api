@@ -29,6 +29,7 @@ import { Queue } from 'bullmq';
 import { Cache } from 'cache-manager';
 import { plainToInstance } from 'class-transformer';
 import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import ms from 'ms';
 import { Repository } from 'typeorm';
 import { SessionEntity } from '../user/entities/session.entity';
@@ -54,6 +55,8 @@ type Token = Branded<
 
 @Injectable()
 export class AuthService {
+  private googleClient: OAuth2Client | null = null;
+
   constructor(
     private readonly configService: ConfigService<AllConfigType>,
     private readonly jwtService: JwtService,
@@ -77,31 +80,17 @@ export class AuthService {
       select: ['id', 'email', 'password'],
     });
 
-    const isPasswordValid =
-      user && (await verifyPassword(password, user.password));
+    if (!user || !user.password) {
+      throw new UnauthorizedException();
+    }
+
+    const isPasswordValid = await verifyPassword(password, user.password);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException();
     }
 
-    const hash = crypto
-      .createHash('sha256')
-      .update(randomStringGenerator())
-      .digest('hex');
-
-    const session = new SessionEntity({
-      hash,
-      userId: user.id,
-      createdBy: SYSTEM_USER_ID,
-      updatedBy: SYSTEM_USER_ID,
-    });
-    await session.save();
-
-    const token = await this.createToken({
-      id: user.id,
-      sessionId: session.id,
-      hash,
-    });
+    const token = await this.createSessionAndToken(user.id);
 
     return plainToInstance(LoginResDto, {
       userId: user.id,
@@ -134,6 +123,46 @@ export class AuthService {
 
     return plainToInstance(RegisterResDto, {
       userId: user.id,
+    });
+  }
+
+  async googleLogin(idToken: string): Promise<LoginResDto> {
+    const clientId = this.getGoogleClientId();
+    const ticket = await this.getGoogleClient().verifyIdToken({
+      idToken,
+      audience: clientId,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload?.email) {
+      throw new UnauthorizedException();
+    }
+
+    const email = payload.email.toLowerCase();
+    let user = await this.userRepository.findOne({
+      where: { email },
+      select: ['id', 'email'],
+    });
+
+    if (!user) {
+      user = new UserEntity({
+        name: payload.name || email.split('@')[0],
+        email,
+        image: payload.picture || '',
+        password: null,
+        emailVerifiedAt: payload.email_verified ? new Date() : undefined,
+        createdBy: SYSTEM_USER_ID,
+        updatedBy: SYSTEM_USER_ID,
+      });
+
+      await user.save();
+    }
+
+    const token = await this.createSessionAndToken(user.id);
+
+    return plainToInstance(LoginResDto, {
+      userId: user.id,
+      ...token,
     });
   }
 
@@ -319,6 +348,47 @@ export class AuthService {
     }
 
     return payload;
+  }
+
+  private getGoogleClientId(): string {
+    const clientId = this.configService.get('auth.googleClientId', {
+      infer: true,
+    });
+
+    if (!clientId) {
+      throw new BadRequestException('Google login is not configured');
+    }
+
+    return clientId;
+  }
+
+  private getGoogleClient(): OAuth2Client {
+    if (!this.googleClient) {
+      this.googleClient = new OAuth2Client(this.getGoogleClientId());
+    }
+
+    return this.googleClient;
+  }
+
+  private async createSessionAndToken(userId: string): Promise<Token> {
+    const hash = crypto
+      .createHash('sha256')
+      .update(randomStringGenerator())
+      .digest('hex');
+
+    const session = new SessionEntity({
+      hash,
+      userId,
+      createdBy: SYSTEM_USER_ID,
+      updatedBy: SYSTEM_USER_ID,
+    });
+    await session.save();
+
+    return await this.createToken({
+      id: userId,
+      sessionId: session.id,
+      hash,
+    });
   }
 
   private verifyRefreshToken(token: string): JwtRefreshPayloadType {

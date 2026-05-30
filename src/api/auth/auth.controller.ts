@@ -4,6 +4,7 @@ import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { ForgotPasswordReqDto } from './dto/forgot-password.req.dto';
+import { GoogleLoginReqDto } from './dto/google-login.req.dto';
 import { LoginReqDto } from './dto/login.req.dto';
 import { LoginResDto } from './dto/login.res.dto';
 import { RefreshReqDto } from './dto/refresh.req.dto';
@@ -30,6 +31,15 @@ export class AuthController {
   @Post('email/login')
   async signIn(@Body() userLogin: LoginReqDto): Promise<LoginResDto> {
     return await this.authService.signIn(userLogin);
+  }
+
+  @ApiPublic({
+    type: LoginResDto,
+    summary: 'Sign in with Google',
+  })
+  @Post('google')
+  async googleLogin(@Body() dto: GoogleLoginReqDto): Promise<LoginResDto> {
+    return await this.authService.googleLogin(dto.idToken);
   }
 
   @ApiPublic()
