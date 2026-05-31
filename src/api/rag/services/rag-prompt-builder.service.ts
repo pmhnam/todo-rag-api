@@ -17,6 +17,7 @@ export class RagPromptBuilderService {
       sourceId: result.sourceId,
       distance: result.distance,
       contentPreview: result.content.slice(0, 200),
+      metadata: result.metadata,
     }));
   }
 }

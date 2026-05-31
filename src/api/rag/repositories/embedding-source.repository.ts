@@ -1,7 +1,7 @@
 import { Uuid } from '@/common/types/common.type';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere, In, Repository } from 'typeorm';
 import { EmbeddingSourceEntity } from '../entities/embedding-source.entity';
 import { EmbeddingStatus } from '../enums/embedding-status.enum';
 import { SourceType } from '../enums/source-type.enum';
@@ -22,6 +22,11 @@ export class EmbeddingSourceRepository {
 
   findById(sourceId: Uuid): Promise<EmbeddingSourceEntity | null> {
     return this.repository.findOne({ where: { id: sourceId } });
+  }
+
+  findManyByIds(sourceIds: Uuid[]): Promise<EmbeddingSourceEntity[]> {
+    if (sourceIds.length === 0) return Promise.resolve([]);
+    return this.repository.find({ where: { id: In(sourceIds) } });
   }
 
   findManyOwned(

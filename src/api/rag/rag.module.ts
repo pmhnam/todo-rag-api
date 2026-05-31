@@ -6,6 +6,7 @@ import { RagCoreModule } from './rag-core.module';
 import { RagIndexingModule } from './rag-indexing.module';
 import { RagIntentModule } from './rag-intent.module';
 import { RagSearchModule } from './rag-search.module';
+import { RagSettingsModule } from './rag-settings.module';
 import { RagService } from './services/rag.service';
 
 @Module({
@@ -16,6 +17,7 @@ import { RagService } from './services/rag.service';
     RagIntentModule,
     RagAgentModule,
     RagIndexingModule,
+    RagSettingsModule,
   ],
   controllers: [RagController],
   providers: [RagService],

@@ -5,10 +5,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { IndexingController } from './controllers/indexing.controller';
 import { RagCoreModule } from './rag-core.module';
 import { IndexingHelperService } from './services/indexing-helper.service';
+import { SourceResolverService } from './services/source-resolver.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([TodoEntity, PostEntity]), RagCoreModule],
   controllers: [IndexingController],
-  providers: [IndexingHelperService],
+  providers: [IndexingHelperService, SourceResolverService],
 })
 export class RagIndexingModule {}

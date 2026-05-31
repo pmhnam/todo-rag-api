@@ -12,6 +12,9 @@ export class ContextChunkDto {
 
   @ApiProperty()
   contentPreview: string;
+
+  @ApiProperty({ required: false })
+  metadata?: Record<string, any>;
 }
 
 export class ChatResDto {

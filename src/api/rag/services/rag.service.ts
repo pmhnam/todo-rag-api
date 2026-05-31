@@ -14,6 +14,7 @@ import { INTENT_TOOL_PERMISSIONS } from '../permission/intent-permissions';
 import { RagContextChunk } from '../types/rag.types';
 import { RagConversationService } from './rag-conversation.service';
 import { RagPromptBuilderService } from './rag-prompt-builder.service';
+import { RagSettingsService } from './rag-settings.service';
 import { SearchService } from './search.service';
 import { TaskAgentService, TaskAgentToolCall } from './task-agent.service';
 
@@ -28,6 +29,7 @@ export class RagService {
     private readonly conversationService: RagConversationService,
     private readonly searchService: SearchService,
     private readonly ragPromptBuilderService: RagPromptBuilderService,
+    private readonly ragSettingsService: RagSettingsService,
     private readonly taskAgentService: TaskAgentService,
     private readonly intentClassifierService: IntentClassifierService,
     private readonly outputValidatorService: OutputValidatorService,
@@ -38,7 +40,7 @@ export class RagService {
     userId: Uuid,
     conversationId: Uuid,
     userMessage: string,
-    topK: number = 5,
+    topK?: number,
     projectId?: Uuid,
     confirmation?: ToolConfirmationDto,
   ): Promise<{
@@ -123,10 +125,21 @@ export class RagService {
 
     const allowedTools = INTENT_TOOL_PERMISSIONS[classification.intent];
 
+    const settings = projectId
+      ? await this.ragSettingsService.getProjectSettings(projectId, userId)
+      : undefined;
+    const effectiveTopK = topK ?? settings?.topK ?? 5;
+
     const searchResults = await this.searchService.search(
       userId,
       userMessage,
-      topK,
+      effectiveTopK,
+      {
+        projectId,
+        maxDistance: settings?.maxDistance,
+        filterByProject: settings?.filterByProject,
+        enableQueryRewrite: settings?.enableQueryRewrite,
+      },
     );
     const context = this.ragPromptBuilderService.buildContext(searchResults);
     const contextChunks =
@@ -194,8 +207,17 @@ export class RagService {
     };
   }
 
-  search(userId: Uuid, query: string, topK: number = 5) {
-    return this.searchService.search(userId, query, topK);
+  async search(userId: Uuid, query: string, topK?: number, projectId?: Uuid) {
+    const settings = projectId
+      ? await this.ragSettingsService.getProjectSettings(projectId, userId)
+      : undefined;
+    const effectiveTopK = topK ?? settings?.topK ?? 5;
+    return this.searchService.search(userId, query, effectiveTopK, {
+      projectId,
+      maxDistance: settings?.maxDistance,
+      filterByProject: settings?.filterByProject,
+      enableQueryRewrite: settings?.enableQueryRewrite,
+    });
   }
 
   createConversation(

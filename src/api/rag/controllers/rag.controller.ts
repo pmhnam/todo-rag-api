@@ -37,7 +37,12 @@ export class RagController {
     @CurrentUser('id') userId: Uuid,
     @Body() reqDto: SearchReqDto,
   ): Promise<SearchResultResDto[]> {
-    return this.ragService.search(userId, reqDto.query, reqDto.topK);
+    return this.ragService.search(
+      userId,
+      reqDto.query,
+      reqDto.topK,
+      reqDto.projectId as Uuid | undefined,
+    );
   }
 
   @Post('conversations')

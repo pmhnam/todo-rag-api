@@ -5,6 +5,7 @@ export type RagContextChunk = {
   sourceId: Uuid;
   distance: number;
   contentPreview: string;
+  metadata?: SearchResultMetadata;
 };
 
 export type SearchResultMetadata = Record<string, unknown>;
@@ -16,3 +17,10 @@ export interface SearchResult {
   distance: number;
   metadata?: SearchResultMetadata;
 }
+
+export type SearchOptions = {
+  projectId?: Uuid;
+  maxDistance?: number;
+  filterByProject?: boolean;
+  enableQueryRewrite?: boolean;
+};

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
 export class SearchReqDto {
   @ApiProperty({
@@ -21,4 +21,12 @@ export class SearchReqDto {
   @Min(1)
   @Max(20)
   topK?: number;
+
+  @ApiProperty({
+    description: 'Project ID to apply project RAG settings',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  projectId?: string;
 }

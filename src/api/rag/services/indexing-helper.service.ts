@@ -16,6 +16,15 @@ export interface RecordContent {
   metadata: Record<string, any>;
 }
 
+export interface RecordSummary {
+  title?: string;
+  projectId?: Uuid;
+  status?: string;
+  priority?: string;
+  dueDate?: Date;
+  slug?: string;
+}
+
 /**
  * Helper service to resolve content from different source types.
  * Add new source types here when extending RAG to cover more entities.
@@ -51,6 +60,26 @@ export class IndexingHelperService {
     }
   }
 
+  /**
+   * Get minimal record details for citations.
+   */
+  async getRecordSummary(
+    sourceType: SourceType,
+    sourceId: Uuid,
+    userId: Uuid,
+  ): Promise<RecordSummary> {
+    switch (sourceType) {
+      case SourceType.TODO:
+        return this.getTodoSummary(sourceId, userId);
+      case SourceType.POST:
+        return this.getPostSummary(sourceId, userId);
+      default:
+        throw new NotFoundException(
+          `Source type '${sourceType}' is not supported`,
+        );
+    }
+  }
+
   private async getTodoContent(
     todoId: Uuid,
     userId: Uuid,
@@ -79,6 +108,7 @@ export class IndexingHelperService {
       metadata: {
         sourceType: SourceType.TODO,
         title: todo.title,
+        projectId: todo.projectId,
         priority: todo.priority,
         status: todo.status?.name,
         dueDate: todo.dueDate,
@@ -118,6 +148,54 @@ export class IndexingHelperService {
         title: post.title,
         slug: post.slug,
       },
+    };
+  }
+
+  private async getTodoSummary(
+    todoId: Uuid,
+    userId: Uuid,
+  ): Promise<RecordSummary> {
+    const todo = await this.todoRepo.findOne({
+      where: { id: todoId },
+      relations: ['status'],
+    });
+
+    if (!todo) {
+      throw new NotFoundException(`Todo ${todoId} not found`);
+    }
+
+    if (todo.userId !== userId) {
+      throw new ForbiddenException('Access denied to this todo');
+    }
+
+    return {
+      title: todo.title,
+      projectId: todo.projectId,
+      status: todo.status?.name,
+      priority: todo.priority,
+      dueDate: todo.dueDate,
+    };
+  }
+
+  private async getPostSummary(
+    postId: Uuid,
+    userId: Uuid,
+  ): Promise<RecordSummary> {
+    const post = await this.postRepo.findOne({
+      where: { id: postId },
+    });
+
+    if (!post) {
+      throw new NotFoundException(`Post ${postId} not found`);
+    }
+
+    if (post.userId !== userId) {
+      throw new ForbiddenException('Access denied to this post');
+    }
+
+    return {
+      title: post.title,
+      slug: post.slug,
     };
   }
 }
